@@ -1,0 +1,10 @@
+/frontend/node_modules
+/frontend/dist
+/frontend/.vite
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+/backend/vendor
+/backend/.phpunit.cache
+/backend/.phpunit.result.cache
+/backend/storage/*.key

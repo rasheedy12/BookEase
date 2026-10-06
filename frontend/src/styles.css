@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e2925;
+  background: #f5f7f3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.page {
+  display: grid;
+  min-height: 100vh;
+  padding: 32px;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(198 221 205 / 48%), transparent 48%),
+    #f5f7f3;
+}
+
+.welcome-card {
+  width: min(100%, 560px);
+  padding: 56px;
+  border: 1px solid #e6eae4;
+  border-radius: 28px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 24px 80px rgb(34 55 43 / 8%);
+}
+
+.brand-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 42px;
+  border-radius: 15px;
+  color: #fff;
+  background: #246b50;
+  font-family: inherit;
+  font-size: 25px;
+  font-weight: 800;
+  place-items: center;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: #47765d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+h1 {
+  max-width: 440px;
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(36px, 7vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.08;
+}
+
+.intro {
+  margin: 22px 0 30px;
+  color: #69756f;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 15px;
+  border: 1px solid #e9ece8;
+  border-radius: 12px;
+  color: #58645d;
+  background: #fafbf9;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status--online {
+  border-color: #d1e8d8;
+  color: #286342;
+  background: #f3faf5;
+}
+
+.status--offline {
+  border-color: #f0d7cf;
+  color: #98513d;
+  background: #fff8f5;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #c2ccc5;
+}
+
+.status--online .status-indicator {
+  background: #3c9c60;
+}
+
+.status--offline .status-indicator {
+  background: #d0785d;
+}
+
+.endpoint {
+  margin: 14px 0 0;
+  color: #8a958e;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding: 18px;
+  }
+
+  .welcome-card {
+    padding: 36px 28px;
+    border-radius: 22px;
+  }
+
+  .brand-mark {
+    margin-bottom: 32px;
+  }
+}
