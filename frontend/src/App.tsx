@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthPage } from './auth/AuthPage'
+import { DashboardPage } from './auth/DashboardPage'
+import { ProtectedRoute } from './auth/ProtectedRoute'
+import { useAuth } from './auth/AuthContext'
+import type { UserRole } from './services/auth'
 import { api } from './services/api'
 
 type ApiStatus = 'checking' | 'online' | 'offline'
 
 function WelcomePage() {
   const [apiStatus, setApiStatus] = useState<ApiStatus>('checking')
+  const { user, loading } = useAuth()
 
   useEffect(() => {
     const controller = new AbortController()
 
-    api.get<{ status: string }>('/health', { signal: controller.signal })
+    api.get<{ status: string }>('/api/health', { signal: controller.signal })
       .then(({ data }) => {
         setApiStatus(data.status === 'ok' ? 'online' : 'offline')
       })
@@ -29,11 +35,10 @@ function WelcomePage() {
     <main className="page">
       <section className="welcome-card" aria-labelledby="welcome-title">
         <div className="brand-mark" aria-hidden="true">B</div>
-        <p className="eyebrow">BOOKEASE · PROJECT SETUP</p>
+        <p className="eyebrow">BOOKEASE · BOOK. PAY. ENJOY.</p>
         <h1 id="welcome-title">A simpler way to book services.</h1>
         <p className="intro">
-          The application foundation is ready. This page checks that the
-          frontend can reach the Laravel API.
+          Discover local services, find a time that works, and book with confidence.
         </p>
         <div className={`status status--${apiStatus}`} role="status">
           <span className="status-indicator" aria-hidden="true" />
@@ -42,15 +47,33 @@ function WelcomePage() {
           {apiStatus === 'offline' && 'API is offline — start the Laravel server'}
         </div>
         <p className="endpoint">GET /api/health</p>
+        <nav className="home-actions" aria-label="Account">
+          {!loading && user && <Link className="auth-link auth-link--primary" to={`/${user.role}`}>Go to your account</Link>}
+          {!loading && !user && (
+            <>
+              <Link className="auth-link auth-link--primary" to="/register">Create account</Link>
+              <Link className="auth-link" to="/login">Sign in</Link>
+            </>
+          )}
+        </nav>
       </section>
     </main>
   )
 }
 
 function App() {
+  const roles: UserRole[] = ['admin', 'vendor', 'customer']
+
   return (
     <Routes>
       <Route path="/" element={<WelcomePage />} />
+      <Route path="/login" element={<AuthPage mode="login" />} />
+      <Route path="/register" element={<AuthPage mode="register" />} />
+      {roles.map((role) => (
+        <Route key={role} path={`/${role}`} element={<ProtectedRoute role={role} />}>
+          <Route index element={<DashboardPage />} />
+        </Route>
+      ))}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

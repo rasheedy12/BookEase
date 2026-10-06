@@ -52,9 +52,28 @@ npm run dev
 
 Open the URL printed by Vite. The development server proxies `/api` requests to Laravel on port 8000.
 
+### 4. Authentication API
+
+Phase 2 provides session-based Laravel Sanctum authentication for the first-party
+SPA. The frontend obtains a CSRF cookie before registration, login, and logout;
+authentication cookies are sent automatically and no bearer token is stored in
+browser storage.
+
+- `POST /api/v1/auth/register` — create a customer account by default, or select
+  the vendor role. Passwords must be at least 12 characters and include letters
+  and numbers. Public registration cannot create administrator accounts.
+- `POST /api/v1/auth/login` — sign in.
+- `POST /api/v1/auth/logout` — sign out the current session.
+- `GET /api/v1/auth/me` — get the current account and role.
+
+Authenticated role dashboards are protected on both the frontend and backend at
+`/api/v1/customer/dashboard`, `/api/v1/vendor/dashboard`, and
+`/api/v1/admin/dashboard`. Create administrator accounts only through a trusted
+administrative provisioning process.
+
 To create a production frontend build, run `npm run build` from `frontend/`.
 
-### 4. Initialize Git (if this folder is not already a repository)
+### 5. Initialize Git (if this folder is not already a repository)
 
 From the project root:
 
