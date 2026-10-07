@@ -6,6 +6,7 @@ import { useAuth } from './auth/AuthContext'
 import type { UserRole } from './services/auth'
 import { ServicesPage } from './catalog/ServicesPage'
 import { VendorDashboardPage } from './catalog/VendorDashboardPage'
+import { CustomerBookingsPage } from './catalog/CustomerBookingsPage'
 
 function WelcomePage() {
   const { user, loading } = useAuth()
@@ -45,7 +46,13 @@ function App() {
       <Route path="/register" element={<AuthPage mode="register" />} />
       {roles.map((role) => (
         <Route key={role} path={`/${role}`} element={<ProtectedRoute role={role} />}>
-          <Route index element={role === 'vendor' ? <VendorDashboardPage /> : <DashboardPage />} />
+          <Route index element={
+            role === 'vendor'
+              ? <VendorDashboardPage />
+              : role === 'customer'
+                ? <CustomerBookingsPage />
+                : <DashboardPage />
+          } />
         </Route>
       ))}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -51,6 +51,9 @@ React + Vite frontend
 - Let customers select a service and request or make a booking.
 - Track booking details, availability, and booking status.
 - Provide booking management views for customers and vendors.
+- Initial implementation: customers can request future slots from the service
+  directory; overlapping pending/confirmed requests are rejected, customers can
+  cancel, and vendors can confirm, decline, or complete bookings.
 
 **Milestone:** Customers and vendors can manage the booking lifecycle.
 

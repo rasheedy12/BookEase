@@ -5,12 +5,14 @@ import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import {
   deleteService,
+  getVendorBookings,
   getVendorProfile,
   getVendorServices,
   saveService,
   saveVendorProfile,
+  updateBookingStatus,
 } from '../services/catalog'
-import type { ServiceInput, ServiceListing, VendorProfileInput } from '../services/catalog'
+import type { Booking, BookingStatus, ServiceInput, ServiceListing, VendorProfileInput } from '../services/catalog'
 
 const emptyProfile: VendorProfileInput = {
   business_name: '',
@@ -33,6 +35,7 @@ export function VendorDashboardPage() {
   const navigate = useNavigate()
   const [profile, setProfile] = useState<VendorProfileInput>(emptyProfile)
   const [services, setServices] = useState<ServiceListing[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [serviceForm, setServiceForm] = useState<ServiceInput>(emptyService)
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,9 +44,10 @@ export function VendorDashboardPage() {
   const [notice, setNotice] = useState<string | null>(null)
 
   async function reloadVendorData() {
-    const [savedProfile, savedServices] = await Promise.all([
+    const [savedProfile, savedServices, savedBookings] = await Promise.all([
       getVendorProfile(),
       getVendorServices(),
+      getVendorBookings(),
     ])
     if (savedProfile) {
       setProfile({
@@ -54,12 +58,13 @@ export function VendorDashboardPage() {
       })
     }
     setServices(savedServices)
+    setBookings(savedBookings)
   }
 
   useEffect(() => {
     let active = true
-    Promise.all([getVendorProfile(), getVendorServices()])
-      .then(([savedProfile, savedServices]) => {
+    Promise.all([getVendorProfile(), getVendorServices(), getVendorBookings()])
+      .then(([savedProfile, savedServices, savedBookings]) => {
         if (!active) return
         if (savedProfile) {
           setProfile({
@@ -70,6 +75,7 @@ export function VendorDashboardPage() {
           })
         }
         setServices(savedServices)
+        setBookings(savedBookings)
       })
       .catch((requestError: unknown) => {
         if (active) setError(getApiErrorMessage(requestError))
@@ -133,6 +139,23 @@ export function VendorDashboardPage() {
         setEditingServiceId(null)
         setServiceForm(emptyService)
       }
+    } catch (requestError: unknown) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleBookingStatus(bookingId: number, status: BookingStatus) {
+    setSubmitting(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const updated = await updateBookingStatus(bookingId, status, 'vendor')
+      setBookings((current) => current.map((booking) =>
+        booking.id === updated.id ? updated : booking,
+      ))
+      setNotice(`Booking ${status}.`)
     } catch (requestError: unknown) {
       setError(getApiErrorMessage(requestError))
     } finally {
@@ -260,6 +283,39 @@ export function VendorDashboardPage() {
                 <button className="secondary-button" type="button" onClick={() => editService(service)}>Edit</button>
                 <button className="secondary-button" type="button" disabled={submitting}
                   onClick={() => void handleDelete(service.id)}>Delete</button>
+              </div>
+            </article>
+          ))}
+        </section>
+        <section className="vendor-service-list" aria-labelledby="vendor-bookings-title">
+          <h2 id="vendor-bookings-title">Booking requests</h2>
+          {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any booking requests yet.</p>}
+          {bookings.map((booking) => (
+            <article className="service-card" key={booking.id}>
+              <div className="service-card__heading">
+                <div>
+                  <p className="service-category">Booking #{booking.id} · {booking.status}</p>
+                  <h3>{booking.service_name}</h3>
+                </div>
+                <p className="service-price">${Number(booking.price).toFixed(2)}</p>
+              </div>
+              <p>Customer: {booking.customer_name ?? 'Customer'}</p>
+              <p className="service-meta">{new Intl.DateTimeFormat(undefined, {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(new Date(booking.starts_at))}</p>
+              {booking.notes && <p>{booking.notes}</p>}
+              <div className="form-actions">
+                {booking.status === 'pending' && <>
+                  <button className="secondary-button" type="button" disabled={submitting}
+                    onClick={() => void handleBookingStatus(booking.id, 'confirmed')}>Confirm</button>
+                  <button className="secondary-button" type="button" disabled={submitting}
+                    onClick={() => void handleBookingStatus(booking.id, 'rejected')}>Decline</button>
+                </>}
+                {booking.status === 'confirmed' && (
+                  <button className="secondary-button" type="button" disabled={submitting}
+                    onClick={() => void handleBookingStatus(booking.id, 'completed')}>Mark complete</button>
+                )}
               </div>
             </article>
           ))}

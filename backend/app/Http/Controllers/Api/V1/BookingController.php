@@ -19,6 +19,7 @@ class BookingController extends Controller
     public function customerIndex(Request $request): JsonResponse
     {
         $bookings = $request->user()->bookings()
+            ->with('customer:id,name')
             ->with('vendorProfile.user:id,name')
             ->latest('starts_at')
             ->get();
