@@ -47,6 +47,22 @@ class AuthTest extends TestCase
         );
     }
 
+    public function test_vite_alternate_port_is_treated_as_a_stateful_frontend(): void
+    {
+        $this->withHeaders([
+            'Origin' => 'http://localhost:5174',
+            'Referer' => 'http://localhost:5174/',
+        ])
+            ->postJson('/api/v1/auth/register', [
+                'name' => 'Vite Customer',
+                'email' => 'vite@example.test',
+                'password' => 'secure-password-123',
+                'password_confirmation' => 'secure-password-123',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.user.email', 'vite@example.test');
+    }
+
     public function test_vendor_can_register_but_admin_cannot_be_self_assigned(): void
     {
         $this->postJson('/api/v1/auth/register', [

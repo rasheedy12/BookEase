@@ -1,35 +1,12 @@
-import { useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
 import { DashboardPage } from './auth/DashboardPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { useAuth } from './auth/AuthContext'
 import type { UserRole } from './services/auth'
-import { api } from './services/api'
-
-type ApiStatus = 'checking' | 'online' | 'offline'
 
 function WelcomePage() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking')
   const { user, loading } = useAuth()
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    api.get<{ status: string }>('/api/health', { signal: controller.signal })
-      .then(({ data }) => {
-        setApiStatus(data.status === 'ok' ? 'online' : 'offline')
-      })
-      .catch(() => {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        setApiStatus('offline')
-      })
-
-    return () => controller.abort()
-  }, [])
 
   return (
     <main className="page">
@@ -40,13 +17,6 @@ function WelcomePage() {
         <p className="intro">
           Discover local services, find a time that works, and book with confidence.
         </p>
-        <div className={`status status--${apiStatus}`} role="status">
-          <span className="status-indicator" aria-hidden="true" />
-          {apiStatus === 'checking' && 'Checking API connection…'}
-          {apiStatus === 'online' && 'Laravel API is connected'}
-          {apiStatus === 'offline' && 'API is offline — start the Laravel server'}
-        </div>
-        <p className="endpoint">GET /api/health</p>
         <nav className="home-actions" aria-label="Account">
           {!loading && user && <Link className="auth-link auth-link--primary" to={`/${user.role}`}>Go to your account</Link>}
           {!loading && !user && (
