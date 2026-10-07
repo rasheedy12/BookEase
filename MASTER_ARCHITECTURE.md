@@ -62,6 +62,17 @@ React + Vite frontend
 - Provide administrative access to manage users, vendors, services, and bookings.
 - Add operational views and moderation controls appropriate to the platform.
 - Enforce administrator-only access to these capabilities.
+- Initial implementation: paginated admin views cover users, vendor profiles,
+  services, and bookings; admins can disable accounts, hide listings, and
+  cancel or reject active bookings. Disabled users cannot sign in or use
+  authenticated API routes.
+- Promote accounts to the admin role only through a trusted provisioning
+  process (for local development, use Laravel Tinker; never expose public
+  administrator registration).
+
+For local development, promote a known account with
+`cd backend && php artisan tinker --execute="App\\Models\\User::where('email', 'admin@example.com')->update(['role' => App\\Enums\\UserRole::ADMIN])"`
+(replace the example email with that account's email).
 
 **Milestone:** Administrators can oversee core platform activity.
 

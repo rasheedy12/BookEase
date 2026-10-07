@@ -49,7 +49,9 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::guard('web')->attempt($credentials)) {
+        if (! Auth::guard('web')->attempt($credentials) || ! Auth::guard('web')->user()->is_active) {
+            Auth::guard('web')->logout();
+
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
                 'errors' => ['email' => ['The provided credentials are incorrect.']],

@@ -32,7 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch((requestError: unknown) => {
         if (!active) return
 
-        if (axios.isAxiosError(requestError) && requestError.response?.status === 401) {
+        if (
+          axios.isAxiosError(requestError)
+          && [401, 403].includes(requestError.response?.status ?? 0)
+        ) {
           setUser(null)
         } else {
           setError(getApiErrorMessage(requestError))

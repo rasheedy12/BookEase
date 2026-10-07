@@ -47,7 +47,7 @@ class BookingController extends Controller
 
         $service = Service::query()->with('vendorProfile')->findOrFail($validated['service_id']);
 
-        if (! $service->is_active || ! $service->vendorProfile) {
+        if (! $service->is_active || ! $service->vendorProfile || ! $service->vendorProfile->user->is_active) {
             throw ValidationException::withMessages([
                 'service_id' => ['This service is no longer available.'],
             ]);

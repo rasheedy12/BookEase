@@ -426,6 +426,84 @@ h1 {
   background: #f3faf5;
 }
 
+.admin-card {
+  width: min(100%, 960px);
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.admin-tab {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #dfe6df;
+  border-radius: 999px;
+  color: #58645d;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-tab--active {
+  border-color: #246b50;
+  color: #fff;
+  background: #246b50;
+}
+
+.admin-section-heading,
+.admin-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-section-heading {
+  margin: 20px 0 10px;
+}
+
+.admin-section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.admin-section-heading span,
+.admin-self-label,
+.admin-pagination span {
+  color: #69756f;
+  font-size: 13px;
+}
+
+.admin-record-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.admin-record h3,
+.service-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.admin-record p {
+  margin: 6px 0 0;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 22px;
+}
+
 @media (max-width: 520px) {
   .page {
     padding: 18px;
@@ -451,5 +529,10 @@ h1 {
 
   .service-card {
     padding: 16px;
+  }
+
+  .admin-record {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

@@ -1,12 +1,12 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
-import { DashboardPage } from './auth/DashboardPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { useAuth } from './auth/AuthContext'
 import type { UserRole } from './services/auth'
 import { ServicesPage } from './catalog/ServicesPage'
 import { VendorDashboardPage } from './catalog/VendorDashboardPage'
 import { CustomerBookingsPage } from './catalog/CustomerBookingsPage'
+import { AdminDashboardPage } from './auth/AdminDashboardPage'
 
 function WelcomePage() {
   const { user, loading } = useAuth()
@@ -51,7 +51,7 @@ function App() {
               ? <VendorDashboardPage />
               : role === 'customer'
                 ? <CustomerBookingsPage />
-                : <DashboardPage />
+                : <AdminDashboardPage />
           } />
         </Route>
       ))}

@@ -14,6 +14,7 @@ class ServiceController extends Controller
         $services = Service::query()
             ->with('vendorProfile:id,business_name,location')
             ->where('is_active', true)
+            ->whereHas('vendorProfile.user', fn ($query) => $query->where('is_active', true))
             ->latest()
             ->get();
 
