@@ -1,7 +1,5 @@
 # BookEase
 BookEase is a modern multi-service booking platform that connects customers with service providers for easy service discovery, booking, payment, and management.
-=======
-
 BookEase is a React/Vite frontend backed by a Laravel REST API and a MySQL database.
 The frontend uses Tailwind CSS, React Router, and Axios to communicate with the API.
 
@@ -87,4 +85,3 @@ The root `.gitignore` excludes frontend build/dependency files and the backend e
 - `frontend/` — React, TypeScript, and Vite application
 - `backend/` — Laravel API application
 - `MASTER_ARCHITECTURE.md` — phased delivery roadmap
->>>>>>> a6514b5 (Initial BookEase)
