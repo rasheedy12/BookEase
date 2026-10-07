@@ -4,6 +4,8 @@ import { DashboardPage } from './auth/DashboardPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { useAuth } from './auth/AuthContext'
 import type { UserRole } from './services/auth'
+import { ServicesPage } from './catalog/ServicesPage'
+import { VendorDashboardPage } from './catalog/VendorDashboardPage'
 
 function WelcomePage() {
   const { user, loading } = useAuth()
@@ -18,6 +20,7 @@ function WelcomePage() {
           Discover local services, find a time that works, and book with confidence.
         </p>
         <nav className="home-actions" aria-label="Account">
+          <Link className="auth-link" to="/services">Browse services</Link>
           {!loading && user && <Link className="auth-link auth-link--primary" to={`/${user.role}`}>Go to your account</Link>}
           {!loading && !user && (
             <>
@@ -37,11 +40,12 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<WelcomePage />} />
+      <Route path="/services" element={<ServicesPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       {roles.map((role) => (
         <Route key={role} path={`/${role}`} element={<ProtectedRoute role={role} />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={role === 'vendor' ? <VendorDashboardPage /> : <DashboardPage />} />
         </Route>
       ))}
       <Route path="*" element={<Navigate to="/" replace />} />

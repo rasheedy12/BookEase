@@ -40,6 +40,9 @@ React + Vite frontend
 - Support vendor onboarding and profile management.
 - Let vendors create and manage the services they offer.
 - Provide service discovery for customers.
+- Initial implementation: vendor business profiles and service CRUD are available
+  through the vendor workspace; active services are searchable in the public
+  service directory at `/services`.
 
 **Milestone:** Vendors can publish services and customers can find them.
 
