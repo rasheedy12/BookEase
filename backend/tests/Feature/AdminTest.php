@@ -44,6 +44,15 @@ class AdminTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/v1/admin/overview')
+            ->assertOk()
+            ->assertJsonPath('data.users_total', 3)
+            ->assertJsonPath('data.users_active', 3)
+            ->assertJsonPath('data.vendors_total', 1)
+            ->assertJsonPath('data.services_published', 1)
+            ->assertJsonPath('data.bookings_pending', 1);
+
+        $this->actingAs($admin, 'sanctum')
             ->getJson('/api/v1/admin/users')
             ->assertOk()
             ->assertJsonPath('meta.total', 3)
@@ -110,6 +119,9 @@ class AdminTest extends TestCase
 
         $this->actingAs($vendor, 'sanctum')
             ->getJson('/api/v1/admin/users')
+            ->assertForbidden();
+
+        $this->getJson('/api/v1/admin/overview')
             ->assertForbidden();
     }
 }

@@ -5,14 +5,24 @@ import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import {
   deleteService,
+  getVendorAvailability,
   getVendorBookings,
   getVendorProfile,
   getVendorServices,
   saveService,
+  saveVendorAvailability,
   saveVendorProfile,
   updateBookingStatus,
+  weekDays,
 } from '../services/catalog'
-import type { Booking, BookingStatus, ServiceInput, ServiceListing, VendorProfileInput } from '../services/catalog'
+import type {
+  Booking,
+  BookingStatus,
+  ServiceInput,
+  ServiceListing,
+  VendorAvailability,
+  VendorProfileInput,
+} from '../services/catalog'
 
 const emptyProfile: VendorProfileInput = {
   business_name: '',
@@ -30,12 +40,25 @@ const emptyService: ServiceInput = {
   is_active: true,
 }
 
+const emptyAvailability: VendorAvailability = {
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  is_configured: false,
+  days: weekDays.map((_, day_of_week) => ({
+    day_of_week,
+    is_closed: true,
+    opens_at: null,
+    closes_at: null,
+  })),
+}
+
 export function VendorDashboardPage() {
   const { error: authError, logout } = useAuth()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<VendorProfileInput>(emptyProfile)
   const [services, setServices] = useState<ServiceListing[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [availability, setAvailability] = useState<VendorAvailability>(emptyAvailability)
+  const [profileSaved, setProfileSaved] = useState(false)
   const [serviceForm, setServiceForm] = useState<ServiceInput>(emptyService)
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -44,12 +67,14 @@ export function VendorDashboardPage() {
   const [notice, setNotice] = useState<string | null>(null)
 
   async function reloadVendorData() {
-    const [savedProfile, savedServices, savedBookings] = await Promise.all([
+    const [savedProfile, savedServices, savedBookings, savedAvailability] = await Promise.all([
       getVendorProfile(),
       getVendorServices(),
       getVendorBookings(),
+      getVendorAvailability(),
     ])
     if (savedProfile) {
+      setProfileSaved(true)
       setProfile({
         business_name: savedProfile.business_name,
         description: savedProfile.description ?? '',
@@ -59,14 +84,19 @@ export function VendorDashboardPage() {
     }
     setServices(savedServices)
     setBookings(savedBookings)
+    setAvailability(savedAvailability.is_configured ? savedAvailability : {
+      ...savedAvailability,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || savedAvailability.timezone,
+    })
   }
 
   useEffect(() => {
     let active = true
-    Promise.all([getVendorProfile(), getVendorServices(), getVendorBookings()])
-      .then(([savedProfile, savedServices, savedBookings]) => {
+    Promise.all([getVendorProfile(), getVendorServices(), getVendorBookings(), getVendorAvailability()])
+      .then(([savedProfile, savedServices, savedBookings, savedAvailability]) => {
         if (!active) return
         if (savedProfile) {
+          setProfileSaved(true)
           setProfile({
             business_name: savedProfile.business_name,
             description: savedProfile.description ?? '',
@@ -76,6 +106,10 @@ export function VendorDashboardPage() {
         }
         setServices(savedServices)
         setBookings(savedBookings)
+        setAvailability(savedAvailability.is_configured ? savedAvailability : {
+          ...savedAvailability,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || savedAvailability.timezone,
+        })
       })
       .catch((requestError: unknown) => {
         if (active) setError(getApiErrorMessage(requestError))
@@ -95,6 +129,7 @@ export function VendorDashboardPage() {
     setNotice(null)
     try {
       const savedProfile = await saveVendorProfile(profile)
+      setProfileSaved(true)
       setProfile({
         business_name: savedProfile.business_name,
         description: savedProfile.description ?? '',
@@ -120,6 +155,22 @@ export function VendorDashboardPage() {
       setServiceForm(emptyService)
       setEditingServiceId(null)
       setNotice('Service saved.')
+    } catch (requestError: unknown) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleAvailabilitySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const savedAvailability = await saveVendorAvailability(availability)
+      setAvailability(savedAvailability)
+      setNotice('Weekly opening hours saved.')
     } catch (requestError: unknown) {
       setError(getApiErrorMessage(requestError))
     } finally {
@@ -220,6 +271,57 @@ export function VendorDashboardPage() {
           </div>
           <button className="auth-submit" type="submit" disabled={submitting || loading}>
             Save business profile
+          </button>
+        </form>
+
+        <form className="catalog-form" onSubmit={handleAvailabilitySubmit}>
+          <h2>Weekly opening hours</h2>
+          <p className="form-hint">Bookings must fit completely within your opening hours.</p>
+          <label htmlFor="availability-timezone">Business timezone</label>
+          <input id="availability-timezone" required maxLength={64} value={availability.timezone}
+            onChange={(event) => setAvailability({ ...availability, timezone: event.target.value })} />
+          {availability.days.map((day) => (
+            <div className="availability-day" key={day.day_of_week}>
+              <label className="checkbox-label">
+                <input type="checkbox" checked={!day.is_closed}
+                  onChange={(event) => setAvailability({
+                    ...availability,
+                    days: availability.days.map((item) => item.day_of_week === day.day_of_week
+                      ? {
+                        ...item,
+                        is_closed: !event.target.checked,
+                        opens_at: item.opens_at ?? '09:00',
+                        closes_at: item.closes_at ?? '17:00',
+                      }
+                      : item),
+                  })} />
+                {weekDays[day.day_of_week]}
+              </label>
+              <input aria-label={`${weekDays[day.day_of_week]} opens`} type="time"
+                disabled={day.is_closed} required={!day.is_closed} value={day.opens_at ?? ''}
+                onChange={(event) => setAvailability({
+                  ...availability,
+                  days: availability.days.map((item) => item.day_of_week === day.day_of_week
+                    ? { ...item, opens_at: event.target.value }
+                    : item),
+                })} />
+              <span>to</span>
+              <input aria-label={`${weekDays[day.day_of_week]} closes`} type="time"
+                disabled={day.is_closed} required={!day.is_closed} value={day.closes_at ?? ''}
+                onChange={(event) => setAvailability({
+                  ...availability,
+                  days: availability.days.map((item) => item.day_of_week === day.day_of_week
+                    ? { ...item, closes_at: event.target.value }
+                    : item),
+                })} />
+            </div>
+          ))}
+          {!profileSaved && (
+            <p className="form-hint">Save your business profile before setting opening hours.</p>
+          )}
+          <button className="auth-submit" type="submit"
+            disabled={submitting || loading || !profileSaved}>
+            Save opening hours
           </button>
         </form>
 

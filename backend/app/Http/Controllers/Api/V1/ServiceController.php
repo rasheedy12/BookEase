@@ -12,7 +12,8 @@ class ServiceController extends Controller
     public function index(): JsonResponse
     {
         $services = Service::query()
-            ->with('vendorProfile:id,business_name,location')
+            ->with('vendorProfile:id,business_name,location,timezone')
+            ->with('vendorProfile.openingHours')
             ->where('is_active', true)
             ->whereHas('vendorProfile.user', fn ($query) => $query->where('is_active', true))
             ->latest()

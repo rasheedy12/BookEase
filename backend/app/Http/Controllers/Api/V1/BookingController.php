@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Service;
+use App\Models\VendorOpeningHour;
 use App\Models\VendorProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,11 +61,33 @@ class BookingController extends Controller
             $vendor = VendorProfile::query()
                 ->lockForUpdate()
                 ->findOrFail($service->vendor_profile_id);
+            $localStartsAt = $startsAt->copy()->setTimezone($vendor->timezone);
+            $localEndsAt = $endsAt->copy()->setTimezone($vendor->timezone);
+            $openingHours = VendorOpeningHour::query()
+                ->where('vendor_profile_id', $vendor->id)
+                ->where('day_of_week', $localStartsAt->dayOfWeek)
+                ->first();
+            $opensAt = $openingHours?->opens_at ? substr($openingHours->opens_at, 0, 5) : null;
+            $closesAt = $openingHours?->closes_at ? substr($openingHours->closes_at, 0, 5) : null;
 
+            if (! $openingHours
+                || $openingHours->is_closed
+                || ! $opensAt
+                || ! $closesAt
+                || $localStartsAt->toDateString() !== $localEndsAt->toDateString()
+                || $localStartsAt->format('H:i:s') < "{$opensAt}:00"
+                || $localEndsAt->format('H:i:s') > "{$closesAt}:00") {
+                throw ValidationException::withMessages([
+                    'starts_at' => ['This booking does not fit within the vendor’s opening hours.'],
+                ]);
+            }
+
+            $bookingStartsAt = $startsAt->copy()->utc();
+            $bookingEndsAt = $endsAt->copy()->utc();
             $hasConflict = $vendor->bookings()
                 ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::CONFIRMED->value])
-                ->where('starts_at', '<', $endsAt)
-                ->where('ends_at', '>', $startsAt)
+                ->where('starts_at', '<', $bookingEndsAt)
+                ->where('ends_at', '>', $bookingStartsAt)
                 ->exists();
 
             if ($hasConflict) {
@@ -78,8 +101,8 @@ class BookingController extends Controller
                 'service_id' => $service->id,
                 'service_name' => $service->name,
                 'business_name' => $vendor->business_name,
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
+                'starts_at' => $bookingStartsAt,
+                'ends_at' => $bookingEndsAt,
                 'price' => $service->price,
                 'status' => BookingStatus::PENDING,
                 'notes' => $validated['notes'] ?? null,

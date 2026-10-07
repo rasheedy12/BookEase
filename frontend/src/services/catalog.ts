@@ -6,7 +6,31 @@ export interface VendorProfile {
   description: string | null
   phone: string | null
   location: string | null
+  timezone: string
 }
+
+export interface VendorOpeningDay {
+  day_of_week: number
+  is_closed: boolean
+  opens_at: string | null
+  closes_at: string | null
+}
+
+export interface VendorAvailability {
+  timezone: string
+  is_configured: boolean
+  days: VendorOpeningDay[]
+}
+
+export const weekDays = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
 
 export interface ServiceListing {
   id: number
@@ -20,6 +44,8 @@ export interface ServiceListing {
     id: number
     business_name: string
     location: string | null
+    timezone: string
+    opening_hours: VendorOpeningDay[]
   }
 }
 
@@ -47,7 +73,7 @@ export interface Booking {
   notes: string | null
 }
 
-export type VendorProfileInput = Omit<VendorProfile, 'id'>
+export type VendorProfileInput = Omit<VendorProfile, 'id' | 'timezone'>
 
 export async function getPublicServices(): Promise<ServiceListing[]> {
   const { data } = await api.get<{ data: ServiceListing[] }>('/api/v1/services')
@@ -61,6 +87,20 @@ export async function getVendorProfile(): Promise<VendorProfile | null> {
 
 export async function saveVendorProfile(input: VendorProfileInput): Promise<VendorProfile> {
   const { data } = await api.put<{ data: VendorProfile }>('/api/v1/vendor/profile', input)
+  return data.data
+}
+
+export async function getVendorAvailability(): Promise<VendorAvailability> {
+  const { data } = await api.get<{ data: VendorAvailability }>('/api/v1/vendor/availability')
+  return data.data
+}
+
+export async function saveVendorAvailability(input: VendorAvailability): Promise<VendorAvailability> {
+  const { timezone, days } = input
+  const { data } = await api.put<{ data: VendorAvailability }>('/api/v1/vendor/availability', {
+    timezone,
+    days,
+  })
   return data.data
 }
 

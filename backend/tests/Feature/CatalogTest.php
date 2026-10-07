@@ -21,9 +21,32 @@ class CatalogTest extends TestCase
             'description' => 'Creative services',
             'phone' => '555-0100',
             'location' => 'Downtown',
+            'timezone' => 'Europe/London',
         ])
             ->assertOk()
-            ->assertJsonPath('data.business_name', 'Bright Studio');
+            ->assertJsonPath('data.business_name', 'Bright Studio')
+            ->assertJsonPath('data.timezone', 'Europe/London');
+
+        $days = collect(range(0, 6))->map(fn (int $day) => [
+            'day_of_week' => $day,
+            'is_closed' => $day === 0,
+            'opens_at' => $day === 0 ? null : '09:00',
+            'closes_at' => $day === 0 ? null : '17:00',
+        ])->all();
+
+        $this->putJson('/api/v1/vendor/availability', [
+            'timezone' => 'Europe/London',
+            'days' => $days,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.timezone', 'Europe/London')
+            ->assertJsonPath('data.is_configured', true)
+            ->assertJsonPath('data.days.0.is_closed', true)
+            ->assertJsonPath('data.days.1.opens_at', '09:00');
+
+        $this->getJson('/api/v1/vendor/availability')
+            ->assertOk()
+            ->assertJsonPath('data.days.1.closes_at', '17:00');
 
         $this->postJson('/api/v1/vendor/services', [
             'name' => 'Portrait session',
@@ -38,7 +61,9 @@ class CatalogTest extends TestCase
         $this->getJson('/api/v1/services')
             ->assertOk()
             ->assertJsonPath('data.0.name', 'Portrait session')
-            ->assertJsonPath('data.0.vendor_profile.location', 'Downtown');
+            ->assertJsonPath('data.0.vendor_profile.location', 'Downtown')
+            ->assertJsonPath('data.0.vendor_profile.timezone', 'Europe/London')
+            ->assertJsonPath('data.0.vendor_profile.opening_hours.1.opens_at', '09:00:00');
 
         $this->getJson('/api/v1/vendor/services')
             ->assertOk()
@@ -65,5 +90,27 @@ class CatalogTest extends TestCase
         $this->actingAs($customer, 'sanctum')
             ->putJson('/api/v1/vendor/profile', ['business_name' => 'Not allowed'])
             ->assertForbidden();
+
+        $this->getJson('/api/v1/vendor/availability')->assertForbidden();
+    }
+
+    public function test_opening_hours_require_valid_time_ranges(): void
+    {
+        $vendor = User::factory()->create(['role' => UserRole::VENDOR]);
+        $vendor->vendorProfile()->create(['business_name' => 'Bright Studio']);
+        $days = collect(range(0, 6))->map(fn (int $day) => [
+            'day_of_week' => $day,
+            'is_closed' => false,
+            'opens_at' => '17:00',
+            'closes_at' => '09:00',
+        ])->all();
+
+        $this->actingAs($vendor, 'sanctum')
+            ->putJson('/api/v1/vendor/availability', [
+                'timezone' => 'UTC',
+                'days' => $days,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('days.0.opens_at');
     }
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import {
+  getAdminOverview,
   getAdminRecords,
   moderateAdminBooking,
   setAdminServiceVisible,
@@ -10,6 +11,7 @@ import {
 } from '../services/admin'
 import type {
   AdminBooking,
+  AdminOverview,
   AdminPagination,
   AdminRecord,
   AdminSection,
@@ -37,6 +39,9 @@ export function AdminDashboardPage() {
   const [page, setPage] = useState(1)
   const [records, setRecords] = useState<AdminRecord[]>([])
   const [pagination, setPagination] = useState<AdminPagination | null>(null)
+  const [overview, setOverview] = useState<AdminOverview | null>(null)
+  const [overviewError, setOverviewError] = useState<string | null>(null)
+  const [overviewLoading, setOverviewLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +64,24 @@ export function AdminDashboardPage() {
   useEffect(() => {
     void loadRecords()
   }, [loadRecords])
+
+  useEffect(() => {
+    let active = true
+    getAdminOverview()
+      .then((result) => {
+        if (active) setOverview(result)
+      })
+      .catch((requestError: unknown) => {
+        if (active) setOverviewError(getApiErrorMessage(requestError))
+      })
+      .finally(() => {
+        if (active) setOverviewLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   async function performAction(action: () => Promise<void>, successMessage: string) {
     setSubmitting(true)
@@ -93,6 +116,33 @@ export function AdminDashboardPage() {
         <p className="eyebrow">BOOKEASE · ADMINISTRATION</p>
         <h1 id="admin-title">Platform overview.</h1>
         <p className="intro">Review accounts, vendors, service listings, and bookings.</p>
+        <section className="admin-overview" aria-label="Platform summary">
+          {overviewLoading && <p role="status">Loading platform summary…</p>}
+          {overview && (
+            <>
+              <article className="admin-stat">
+                <span>Total users</span>
+                <strong>{overview.users_total.toLocaleString()}</strong>
+              </article>
+              <article className="admin-stat">
+                <span>Active users</span>
+                <strong>{overview.users_active.toLocaleString()}</strong>
+              </article>
+              <article className="admin-stat">
+                <span>Vendors</span>
+                <strong>{overview.vendors_total.toLocaleString()}</strong>
+              </article>
+              <article className="admin-stat">
+                <span>Published services</span>
+                <strong>{overview.services_published.toLocaleString()}</strong>
+              </article>
+              <article className="admin-stat">
+                <span>Pending bookings</span>
+                <strong>{overview.bookings_pending.toLocaleString()}</strong>
+              </article>
+            </>
+          )}
+        </section>
         <nav className="admin-tabs" aria-label="Administration sections">
           {sections.map((item) => (
             <button key={item.id} type="button"
@@ -107,7 +157,9 @@ export function AdminDashboardPage() {
           <h2>{sections.find((item) => item.id === section)?.label}</h2>
           {pagination && <span>{pagination.total} total</span>}
         </div>
-        {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
+        {(error || authError || overviewError) && (
+          <p className="form-error" role="alert">{error ?? authError ?? overviewError}</p>
+        )}
         {notice && <p className="success-message" role="status">{notice}</p>}
         {loading && <p role="status">Loading {section}…</p>}
         {!loading && records.length === 0 && <p className="empty-state">No {section} to display.</p>}

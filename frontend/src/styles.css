@@ -276,6 +276,39 @@ h1 {
   resize: vertical;
 }
 
+.form-hint {
+  margin: 0 0 8px;
+  color: #69756f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.availability-day {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(100px, 1fr) auto minmax(100px, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.availability-day input[type="time"] {
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid #dfe6df;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.availability-day input[type="time"]:disabled {
+  opacity: 0.5;
+}
+
+.availability-day > span {
+  color: #69756f;
+  font-size: 13px;
+}
+
 .catalog-search:focus,
 .catalog-form input:focus,
 .catalog-form textarea:focus {
@@ -430,6 +463,32 @@ h1 {
   width: min(100%, 960px);
 }
 
+.admin-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.admin-stat {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #e3e9e3;
+  border-radius: 14px;
+  background: #fafbf9;
+}
+
+.admin-stat span {
+  color: #69756f;
+  font-size: 13px;
+}
+
+.admin-stat strong {
+  color: #244c39;
+  font-size: 24px;
+}
+
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -525,6 +584,15 @@ h1 {
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .availability-day {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .availability-day .checkbox-label {
+    grid-column: 1 / -1;
   }
 
   .service-card {

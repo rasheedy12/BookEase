@@ -16,7 +16,7 @@ class BookingTest extends TestCase
     public function test_customer_can_request_booking_and_vendor_can_manage_its_lifecycle(): void
     {
         [$customer, $vendor, $service] = $this->makeServiceOffering();
-        $startsAt = now()->addDays(2)->startOfHour()->toIso8601String();
+        $startsAt = now()->addDays(2)->startOfDay()->addHours(12)->toIso8601String();
 
         $this->actingAs($customer, 'sanctum')
             ->postJson('/api/v1/customer/bookings', [
@@ -61,7 +61,7 @@ class BookingTest extends TestCase
         [$customer, $vendor, $service] = $this->makeServiceOffering();
         $otherCustomer = User::factory()->create(['role' => UserRole::CUSTOMER]);
         $otherVendor = User::factory()->create(['role' => UserRole::VENDOR]);
-        $startsAt = now()->addDays(3)->toIso8601String();
+        $startsAt = now()->addDays(3)->startOfDay()->addHours(12)->toIso8601String();
 
         $this->actingAs($customer, 'sanctum')
             ->postJson('/api/v1/customer/bookings', [
@@ -89,7 +89,7 @@ class BookingTest extends TestCase
     public function test_rejected_booking_does_not_block_the_time_slot(): void
     {
         [$customer, $vendor, $service] = $this->makeServiceOffering();
-        $startsAt = now()->addDays(2)->startOfHour()->toIso8601String();
+        $startsAt = now()->addDays(2)->startOfDay()->addHours(12)->toIso8601String();
 
         $this->actingAs($customer, 'sanctum')
             ->postJson('/api/v1/customer/bookings', [
@@ -112,6 +112,42 @@ class BookingTest extends TestCase
             ->assertCreated();
     }
 
+    public function test_booking_must_fit_vendor_opening_hours(): void
+    {
+        [$customer, , $service] = $this->makeServiceOffering();
+        $startsAt = now()->addDays(2)->startOfDay()->addHours(12);
+        $day = $startsAt->dayOfWeek;
+        $profile = $service->vendorProfile;
+        $profile->openingHours()->updateOrCreate(
+            ['day_of_week' => $day],
+            [
+                'is_closed' => false,
+                'opens_at' => '13:00',
+                'closes_at' => '15:00',
+            ],
+        );
+
+        $this->actingAs($customer, 'sanctum')
+            ->postJson('/api/v1/customer/bookings', [
+                'service_id' => $service->id,
+                'starts_at' => $startsAt->toIso8601String(),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('starts_at');
+
+        $profile->openingHours()->where('day_of_week', $day)->update([
+            'opens_at' => '12:00',
+            'closes_at' => '13:00',
+        ]);
+
+        $this->postJson('/api/v1/customer/bookings', [
+            'service_id' => $service->id,
+            'starts_at' => $startsAt->toIso8601String(),
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.starts_at', $startsAt->toIso8601String());
+    }
+
     /**
      * @return array{User, User, Service}
      */
@@ -121,7 +157,14 @@ class BookingTest extends TestCase
         $profile = $vendor->vendorProfile()->create([
             'business_name' => 'Bright Studio',
             'location' => 'Downtown',
+            'timezone' => 'UTC',
         ]);
+        $profile->openingHours()->createMany(collect(range(0, 6))->map(fn (int $day) => [
+            'day_of_week' => $day,
+            'is_closed' => false,
+            'opens_at' => '00:00',
+            'closes_at' => '23:59',
+        ])->all());
         $service = $profile->services()->create([
             'name' => 'Portrait session',
             'description' => 'A one-hour portrait session.',

@@ -10,6 +10,14 @@ export interface AdminPagination {
   total: number
 }
 
+export interface AdminOverview {
+  users_total: number
+  users_active: number
+  vendors_total: number
+  services_published: number
+  bookings_pending: number
+}
+
 export interface AdminUser {
   id: number
   name: string
@@ -56,6 +64,11 @@ const endpoints: Record<AdminSection, string> = {
   vendors: '/api/v1/admin/vendors',
   services: '/api/v1/admin/services',
   bookings: '/api/v1/admin/bookings',
+}
+
+export async function getAdminOverview(): Promise<AdminOverview> {
+  const { data } = await api.get<{ data: AdminOverview }>('/api/v1/admin/overview')
+  return data.data
 }
 
 export async function getAdminRecords<T extends AdminRecord>(

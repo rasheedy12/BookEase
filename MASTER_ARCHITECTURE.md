@@ -52,8 +52,10 @@ React + Vite frontend
 - Track booking details, availability, and booking status.
 - Provide booking management views for customers and vendors.
 - Initial implementation: customers can request future slots from the service
-  directory; overlapping pending/confirmed requests are rejected, customers can
-  cancel, and vendors can confirm, decline, or complete bookings.
+  directory; vendors configure recurring weekly opening hours and a timezone,
+  and requests must fit within those hours. Overlapping pending/confirmed
+  requests are rejected, customers can cancel, and vendors can confirm,
+  decline, or complete bookings.
 
 **Milestone:** Customers and vendors can manage the booking lifecycle.
 
@@ -63,9 +65,10 @@ React + Vite frontend
 - Add operational views and moderation controls appropriate to the platform.
 - Enforce administrator-only access to these capabilities.
 - Initial implementation: paginated admin views cover users, vendor profiles,
-  services, and bookings; admins can disable accounts, hide listings, and
-  cancel or reject active bookings. Disabled users cannot sign in or use
-  authenticated API routes.
+  services, and bookings, with an overview of platform totals and pending
+  bookings; admins can disable accounts, hide listings, and cancel or reject
+  active bookings. Disabled users cannot sign in or use authenticated API
+  routes.
 - Promote accounts to the admin role only through a trusted provisioning
   process (for local development, use Laravel Tinker; never expose public
   administrator registration).

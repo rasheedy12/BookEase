@@ -3,13 +3,24 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
-import { createBooking, getPublicServices } from '../services/catalog'
-import type { ServiceListing } from '../services/catalog'
+import { createBooking, getPublicServices, weekDays } from '../services/catalog'
+import type { ServiceListing, VendorOpeningDay } from '../services/catalog'
 
 function localDateTimeMinimum(): string {
   const now = new Date()
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
   return now.toISOString().slice(0, 16)
+}
+
+function formatOpeningHours(days: VendorOpeningDay[] | undefined): string {
+  if (!days?.some((day) => !day.is_closed)) return 'Not accepting bookings'
+
+  return days
+    .filter((day) => !day.is_closed && day.opens_at && day.closes_at)
+    .map((day) =>
+      `${weekDays[day.day_of_week].slice(0, 3)} ${day.opens_at?.slice(0, 5)}–${day.closes_at?.slice(0, 5)}`,
+    )
+    .join(' · ')
 }
 
 export function ServicesPage() {
@@ -114,6 +125,11 @@ export function ServicesPage() {
                 {service.vendor_profile?.location ? ` · ${service.vendor_profile.location}` : ''}
                 {' · '}{service.duration_minutes} min
               </p>
+              {service.vendor_profile && (
+                <p className="service-meta">
+                  Hours ({service.vendor_profile.timezone}): {formatOpeningHours(service.vendor_profile.opening_hours)}
+                </p>
+              )}
               {user?.role === 'customer' && (
                 <button className="auth-submit" type="button" onClick={() => {
                   setError(null)

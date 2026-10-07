@@ -18,6 +18,24 @@ use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    public function overview(): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                'users_total' => User::query()->count(),
+                'users_active' => User::query()->where('is_active', true)->count(),
+                'vendors_total' => VendorProfile::query()->count(),
+                'services_published' => Service::query()
+                    ->where('is_active', true)
+                    ->whereHas('vendorProfile.user', fn ($query) => $query->where('is_active', true))
+                    ->count(),
+                'bookings_pending' => Booking::query()
+                    ->where('status', BookingStatus::PENDING->value)
+                    ->count(),
+            ],
+        ]);
+    }
+
     public function users(): JsonResponse
     {
         $users = User::query()->latest()->paginate(25);

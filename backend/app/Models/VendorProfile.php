@@ -13,6 +13,7 @@ class VendorProfile extends Model
         'description',
         'phone',
         'location',
+        'timezone',
     ];
 
     public function user(): BelongsTo
@@ -28,5 +29,10 @@ class VendorProfile extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function openingHours(): HasMany
+    {
+        return $this->hasMany(VendorOpeningHour::class)->orderBy('day_of_week');
     }
 }
