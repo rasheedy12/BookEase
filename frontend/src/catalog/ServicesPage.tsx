@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import { createBooking, getPublicServices } from '../services/catalog'
@@ -14,7 +14,6 @@ function localDateTimeMinimum(): string {
 
 export function ServicesPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [services, setServices] = useState<ServiceListing[]>([])
   const [search, setSearch] = useState('')
   const [bookingService, setBookingService] = useState<ServiceListing | null>(null)
