@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import { createBooking, getPublicServices, weekDays } from '../services/catalog'
@@ -25,8 +25,9 @@ function formatOpeningHours(days: VendorOpeningDay[] | undefined): string {
 
 export function ServicesPage() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [services, setServices] = useState<ServiceListing[]>([])
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [bookingService, setBookingService] = useState<ServiceListing | null>(null)
   const [startsAt, setStartsAt] = useState('')
   const [notes, setNotes] = useState('')

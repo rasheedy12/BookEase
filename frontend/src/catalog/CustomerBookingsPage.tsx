@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
-import { getCustomerBookings, updateBookingStatus } from '../services/catalog'
-import type { Booking } from '../services/catalog'
+import { getCustomerBookings, getPublicServices, updateBookingStatus } from '../services/catalog'
+import type { Booking, ServiceListing } from '../services/catalog'
 
 function formatBookingTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -16,9 +16,14 @@ export function CustomerBookingsPage() {
   const { user, error: authError, logout } = useAuth()
   const navigate = useNavigate()
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [services, setServices] = useState<ServiceListing[]>([])
+  const [serviceSearch, setServiceSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [loading, setLoading] = useState(true)
+  const [servicesLoading, setServicesLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [servicesError, setServicesError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     setBookings(await getCustomerBookings())
@@ -40,6 +45,38 @@ export function CustomerBookingsPage() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    getPublicServices()
+      .then((listings) => {
+        if (active) setServices(listings)
+      })
+      .catch((requestError: unknown) => {
+        if (active) setServicesError(getApiErrorMessage(requestError))
+      })
+      .finally(() => {
+        if (active) setServicesLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const categories = [...new Set(services.map((service) => service.category))]
+    .sort((first, second) => first.localeCompare(second))
+  const query = serviceSearch.trim().toLocaleLowerCase()
+  const matchingServices = services.filter((service) => {
+    const matchesCategory = !selectedCategory || service.category === selectedCategory
+    const matchesSearch = !query || [
+      service.name,
+      service.description,
+      service.category,
+      service.vendor_profile?.business_name,
+      service.vendor_profile?.location,
+    ].some((field) => field?.toLocaleLowerCase().includes(query))
+    return matchesCategory && matchesSearch
+  })
 
   async function cancelBooking(bookingId: number) {
     setSubmitting(true)
@@ -66,30 +103,97 @@ export function CustomerBookingsPage() {
         <p className="eyebrow">BOOKEASE · CUSTOMER ACCOUNT</p>
         <h1 id="customer-bookings-title">Your bookings.</h1>
         <p className="intro">Hello {user?.name}. Review your booking requests and their status.</p>
-        <p className="dashboard-links"><Link to="/services">Browse services</Link></p>
-        {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
-        {loading && <p role="status">Loading your bookings…</p>}
-        {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any bookings yet.</p>}
-        <div className="service-list">
-          {bookings.map((booking) => (
-            <article className="service-card" key={booking.id}>
-              <div className="service-card__heading">
-                <div>
-                  <p className="service-category">Booking #{booking.id} · {booking.status}</p>
-                  <h2>{booking.service_name}</h2>
+        <section className="customer-discovery" aria-labelledby="customer-services-title">
+          <div className="customer-discovery__heading">
+            <div>
+              <p className="eyebrow">FIND YOUR NEXT SERVICE</p>
+              <h2 id="customer-services-title">Explore local services</h2>
+              <p className="form-hint">Search by service, category, business, or location.</p>
+            </div>
+            <Link className="auth-link auth-link--primary" to="/services">Browse full directory</Link>
+          </div>
+          <div className="service-filters">
+            <label className="sr-only" htmlFor="customer-service-search">Search services</label>
+            <input
+              id="customer-service-search"
+              className="catalog-search"
+              type="search"
+              value={serviceSearch}
+              onChange={(event) => setServiceSearch(event.target.value)}
+              placeholder="What service are you looking for?"
+            />
+            <label className="sr-only" htmlFor="customer-service-category">Filter by category</label>
+            <select
+              id="customer-service-category"
+              className="category-select"
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+            >
+              <option value="">All categories</option>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </div>
+          {servicesLoading && <p role="status">Loading services…</p>}
+          {servicesError && <p className="form-error" role="alert">{servicesError}</p>}
+          {!servicesLoading && !servicesError && matchingServices.length === 0 && (
+            <p className="empty-state">
+              {services.length === 0
+                ? 'No services are available yet. Please check back soon.'
+                : 'No services match those filters. Try a different search or category.'}
+            </p>
+          )}
+          <div className="service-list">
+            {matchingServices.map((service) => (
+              <article className="service-card" key={service.id}>
+                <div className="service-card__heading">
+                  <div>
+                    <p className="service-category">{service.category}</p>
+                    <h3>{service.name}</h3>
+                  </div>
+                  <p className="service-price">${Number(service.price).toFixed(2)}</p>
                 </div>
-                <p className="service-price">${Number(booking.price).toFixed(2)}</p>
-              </div>
-              <p>{booking.business_name}</p>
-              <p className="service-meta">{formatBookingTime(booking.starts_at)}</p>
-              {booking.notes && <p>{booking.notes}</p>}
-              {['pending', 'confirmed'].includes(booking.status) && (
-                <button className="secondary-button" type="button" disabled={submitting}
-                  onClick={() => void cancelBooking(booking.id)}>Cancel booking</button>
-              )}
-            </article>
-          ))}
-        </div>
+                <p>{service.description}</p>
+                <p className="service-meta">
+                  {service.vendor_profile?.business_name ?? 'Local provider'}
+                  {service.vendor_profile?.location ? ` · ${service.vendor_profile.location}` : ''}
+                  {' · '}{service.duration_minutes} min
+                </p>
+                <Link
+                  className="secondary-button service-book-link"
+                  to={`/services?search=${encodeURIComponent(service.name)}`}
+                >
+                  View booking options
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section className="customer-bookings" aria-labelledby="customer-bookings-list-title">
+          <h2 id="customer-bookings-list-title">Your booking requests</h2>
+          {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
+          {loading && <p role="status">Loading your bookings…</p>}
+          {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any bookings yet.</p>}
+          <div className="service-list">
+            {bookings.map((booking) => (
+              <article className="service-card" key={booking.id}>
+                <div className="service-card__heading">
+                  <div>
+                    <p className="service-category">Booking #{booking.id} · {booking.status}</p>
+                    <h2>{booking.service_name}</h2>
+                  </div>
+                  <p className="service-price">${Number(booking.price).toFixed(2)}</p>
+                </div>
+                <p>{booking.business_name}</p>
+                <p className="service-meta">{formatBookingTime(booking.starts_at)}</p>
+                {booking.notes && <p>{booking.notes}</p>}
+                {['pending', 'confirmed'].includes(booking.status) && (
+                  <button className="secondary-button" type="button" disabled={submitting}
+                    onClick={() => void cancelBooking(booking.id)}>Cancel booking</button>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
         <button className="secondary-button signout-button" type="button" onClick={() => void handleLogout()}>
           Sign out
         </button>

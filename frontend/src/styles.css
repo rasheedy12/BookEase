@@ -260,6 +260,7 @@ h1 {
 }
 
 .catalog-search,
+.category-select,
 .catalog-form input:not([type="checkbox"]),
 .catalog-form textarea {
   width: 100%;
@@ -310,6 +311,7 @@ h1 {
 }
 
 .catalog-search:focus,
+.category-select:focus,
 .catalog-form input:focus,
 .catalog-form textarea:focus {
   border-color: #478665;
@@ -318,10 +320,14 @@ h1 {
 
 .catalog-form {
   display: grid;
-  gap: 4px;
+  gap: 8px;
   margin-top: 30px;
   padding-top: 26px;
   border-top: 1px solid #e6eae4;
+}
+
+.catalog-form label {
+  margin: 8px 0 0;
 }
 
 .catalog-form h2,
@@ -329,6 +335,12 @@ h1 {
   margin: 0 0 10px;
   font-size: 20px;
   letter-spacing: -0.03em;
+}
+
+.catalog-form .form-actions .auth-submit {
+  min-height: 42px;
+  margin: 0;
+  padding: 0 18px;
 }
 
 .form-row {
@@ -386,11 +398,114 @@ h1 {
   font-weight: 650;
 }
 
+.customer-discovery {
+  margin: 30px 0 0;
+  padding: 28px 0;
+  border-top: 1px solid #e6eae4;
+  border-bottom: 1px solid #e6eae4;
+}
+
+.customer-discovery__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+
+.customer-discovery__heading .eyebrow {
+  margin-bottom: 8px;
+}
+
+.customer-discovery__heading h2,
+.customer-bookings h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.035em;
+}
+
+.customer-discovery__heading .form-hint {
+  margin: 8px 0 0;
+}
+
+.customer-discovery__heading > .auth-link {
+  white-space: nowrap;
+}
+
+.service-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.service-filters .catalog-search {
+  min-width: 0;
+}
+
+.service-filters .category-select {
+  min-width: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.service-book-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  text-decoration: none;
+}
+
+.customer-bookings {
+  margin-top: 0;
+  padding-top: 30px;
+}
+
+.customer-bookings > h2 {
+  margin-bottom: 20px;
+}
+
+.customer-discovery .service-list {
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.customer-discovery .service-card {
+  padding: 22px 24px;
+}
+
+.customer-discovery .service-card > p {
+  margin: 12px 0 0;
+}
+
 .service-list,
 .vendor-service-list {
   display: grid;
   gap: 14px;
   margin-top: 20px;
+}
+
+.catalog-card > .service-list {
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.catalog-card > .service-list .service-card {
+  padding: 22px 24px;
+}
+
+.catalog-card > .service-list .auth-submit {
+  width: fit-content;
+  min-width: 150px;
+  margin-top: 14px;
+  padding: 0 18px;
 }
 
 .vendor-service-list {
@@ -597,6 +712,27 @@ h1 {
 
   .service-card {
     padding: 16px;
+  }
+
+  .customer-discovery__heading {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .customer-discovery__heading > .auth-link {
+    justify-self: start;
+  }
+
+  .service-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-discovery .service-card {
+    padding: 18px;
+  }
+
+  .catalog-card > .service-list .service-card {
+    padding: 18px;
   }
 
   .admin-record {
