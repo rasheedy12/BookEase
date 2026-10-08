@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\VendorOpeningHour;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,11 +85,8 @@ class VendorProfileController extends Controller
             $lockedProfile->update(['timezone' => $validated['timezone']]);
 
             foreach ($validated['days'] as $day) {
-                VendorOpeningHour::query()->updateOrCreate(
-                    [
-                        'vendor_profile_id' => $lockedProfile->id,
-                        'day_of_week' => $day['day_of_week'],
-                    ],
+                $lockedProfile->openingHours()->updateOrCreate(
+                    ['day_of_week' => $day['day_of_week']],
                     [
                         'is_closed' => $day['is_closed'],
                         'opens_at' => $day['is_closed'] ? null : $day['opens_at'],
