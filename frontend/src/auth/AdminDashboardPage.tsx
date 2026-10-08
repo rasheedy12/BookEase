@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
@@ -46,18 +46,24 @@ export function AdminDashboardPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const recordsRequestId = useRef(0)
 
   const loadRecords = useCallback(async () => {
+    const requestId = ++recordsRequestId.current
     setLoading(true)
     setError(null)
     try {
       const result = await getAdminRecords<AdminRecord>(section, page)
-      setRecords(result.data)
-      setPagination(result.meta)
+      if (requestId === recordsRequestId.current) {
+        setRecords(result.data)
+        setPagination(result.meta)
+      }
     } catch (requestError: unknown) {
-      setError(getApiErrorMessage(requestError))
+      if (requestId === recordsRequestId.current) {
+        setError(getApiErrorMessage(requestError))
+      }
     } finally {
-      setLoading(false)
+      if (requestId === recordsRequestId.current) setLoading(false)
     }
   }, [page, section])
 
@@ -104,8 +110,13 @@ export function AdminDashboardPage() {
   }
 
   function selectSection(nextSection: AdminSection) {
+    recordsRequestId.current += 1
     setSection(nextSection)
     setPage(1)
+    setRecords([])
+    setPagination(null)
+    setLoading(true)
+    setError(null)
     setNotice(null)
   }
 
