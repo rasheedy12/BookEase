@@ -236,6 +236,17 @@ class PaystackPaymentService
             return;
         }
 
+        if ($response->status() === 401) {
+            Log::error('Paystack rejected the configured secret key.', [
+                'status' => $response->status(),
+            ]);
+
+            throw new HttpException(
+                502,
+                'Paystack rejected the configured secret key. Check PAYSTACK_SECRET_KEY in backend/.env and restart the API.',
+            );
+        }
+
         Log::error('Paystack API request failed.', [
             'status' => $response->status(),
             'message' => $response->json('message'),

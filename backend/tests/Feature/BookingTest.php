@@ -15,6 +15,8 @@ class BookingTest extends TestCase
 {
     use RefreshDatabase;
 
+    private bool $rejectPaystackKey = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -24,6 +26,10 @@ class BookingTest extends TestCase
         ]);
         $session = 0;
         Http::fake(function (ClientRequest $request) use (&$session) {
+            if ($this->rejectPaystackKey && str_ends_with($request->url(), '/transaction/initialize')) {
+                return Http::response(['status' => false, 'message' => 'Invalid key'], 401);
+            }
+
             if (str_ends_with($request->url(), '/transaction/initialize')) {
                 $session++;
 
@@ -167,6 +173,31 @@ class BookingTest extends TestCase
         $booking = $customer->bookings()->firstOrFail();
         $this->assertSame(BookingStatus::REJECTED, $booking->status);
         $this->assertDatabaseMissing('payments', ['booking_id' => $booking->id]);
+    }
+
+    public function test_booking_reports_a_rejected_paystack_secret_key(): void
+    {
+        [$customer, , $service] = $this->makeServiceOffering();
+        $this->rejectPaystackKey = true;
+        $startsAt = now()->addDays(2)->startOfDay()->addHours(12)->toIso8601String();
+
+        $this->actingAs($customer, 'sanctum')
+            ->postJson('/api/v1/customer/bookings', [
+                'service_id' => $service->id,
+                'starts_at' => $startsAt,
+            ])
+            ->assertStatus(502)
+            ->assertJsonPath(
+                'message',
+                'Paystack rejected the configured secret key. Check PAYSTACK_SECRET_KEY in backend/.env and restart the API.',
+            );
+
+        $booking = $customer->bookings()->firstOrFail();
+        $this->assertSame(BookingStatus::REJECTED, $booking->status);
+        $this->assertDatabaseHas('payments', [
+            'booking_id' => $booking->id,
+            'status' => 'failed',
+        ]);
     }
 
     public function test_booking_must_fit_vendor_opening_hours(): void
