@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import { formatCurrency } from '../services/catalog'
 import { getApiErrorMessage } from '../services/apiError'
 import {
   getAdminOverview,
@@ -237,7 +238,7 @@ export function AdminDashboardPage() {
               <div>
                 <p className="service-category">{record.category} · {record.is_active ? 'Published' : 'Hidden'}</p>
                 <h3>{record.name}</h3>
-                <p>{record.business_name ?? 'Vendor unavailable'} · ${Number(record.price).toFixed(2)}</p>
+                <p>{record.business_name ?? 'Vendor unavailable'} · {formatCurrency(record.price)}</p>
               </div>
               <button className="secondary-button" type="button" disabled={submitting}
                 onClick={() => void performAction(
@@ -253,7 +254,8 @@ export function AdminDashboardPage() {
                 <p className="service-category">Booking #{record.id} · {record.status}</p>
                 <h3>{record.service_name}</h3>
                 <p>{record.business_name} · {record.customer_name ?? 'Customer'} ({record.customer_email ?? 'no email'})</p>
-                <p className="service-meta">{formatDate(record.starts_at)} · ${Number(record.price).toFixed(2)}</p>
+                <p className="service-meta">{formatDate(record.starts_at)} · {formatCurrency(record.price)}</p>
+                <p className="service-meta">Payment: {record.payment_status}</p>
               </div>
               {['pending', 'confirmed'].includes(record.status) && (
                 <div className="form-actions">

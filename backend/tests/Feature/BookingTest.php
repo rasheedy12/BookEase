@@ -7,11 +7,38 @@ use App\Enums\UserRole;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as ClientRequest;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class BookingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config([
+            'services.paystack.secret_key' => 'sk_test_bookease',
+            'services.paystack.frontend_url' => 'http://localhost:5173',
+        ]);
+        $session = 0;
+        Http::fake(function (ClientRequest $request) use (&$session) {
+            if (str_ends_with($request->url(), '/transaction/initialize')) {
+                $session++;
+
+                return Http::response([
+                    'status' => true,
+                    'data' => [
+                        'reference' => $request->data()['reference'],
+                        'authorization_url' => "https://checkout.paystack.test/session/{$session}",
+                    ],
+                ]);
+            }
+
+            return Http::response(['status' => true, 'data' => ['id' => 're_test_1']]);
+        });
+    }
 
     public function test_customer_can_request_booking_and_vendor_can_manage_its_lifecycle(): void
     {
@@ -26,10 +53,22 @@ class BookingTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.payment_status', 'pending')
+            ->assertJsonPath('checkout_url', 'https://checkout.paystack.test/session/1')
             ->assertJsonPath('data.service_name', 'Portrait session')
             ->assertJsonPath('data.price', '85.00');
 
         $bookingId = $customer->bookings()->firstOrFail()->id;
+        $this->assertDatabaseHas('payments', [
+            'booking_id' => $bookingId,
+            'amount' => 8500,
+            'currency' => 'NGN',
+            'status' => 'pending',
+        ]);
+        Http::assertSent(fn (ClientRequest $request) => str_ends_with($request->url(), '/transaction/initialize')
+            && (int) $request->data()['amount'] === 8500
+            && $request->data()['currency'] === 'NGN'
+            && $request->data()['metadata']['booking_id'] === $bookingId);
 
         $this->actingAs($customer, 'sanctum')
             ->postJson('/api/v1/customer/bookings', [
@@ -110,6 +149,24 @@ class BookingTest extends TestCase
                 'starts_at' => $startsAt,
             ])
             ->assertCreated();
+    }
+
+    public function test_booking_is_rejected_when_paystack_is_not_configured(): void
+    {
+        [$customer, , $service] = $this->makeServiceOffering();
+        config(['services.paystack.secret_key' => '']);
+        $startsAt = now()->addDays(2)->startOfDay()->addHours(12)->toIso8601String();
+
+        $this->actingAs($customer, 'sanctum')
+            ->postJson('/api/v1/customer/bookings', [
+                'service_id' => $service->id,
+                'starts_at' => $startsAt,
+            ])
+            ->assertStatus(503);
+
+        $booking = $customer->bookings()->firstOrFail();
+        $this->assertSame(BookingStatus::REJECTED, $booking->status);
+        $this->assertDatabaseMissing('payments', ['booking_id' => $booking->id]);
     }
 
     public function test_booking_must_fit_vendor_opening_hours(): void

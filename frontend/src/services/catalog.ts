@@ -1,5 +1,13 @@
 import { api } from './api'
 
+export function formatCurrency(amount: string | number): string {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    maximumFractionDigits: 2,
+  }).format(Number(amount))
+}
+
 export interface VendorProfile {
   id: number
   business_name: string
@@ -59,6 +67,14 @@ export interface ServiceInput {
 }
 
 export type BookingStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled' | 'completed'
+export type PaymentStatus =
+  | 'unpaid'
+  | 'pending'
+  | 'succeeded'
+  | 'failed'
+  | 'refund_pending'
+  | 'refund_failed'
+  | 'refunded'
 
 export interface Booking {
   id: number
@@ -69,6 +85,7 @@ export interface Booking {
   starts_at: string
   ends_at: string
   price: string
+  payment_status: PaymentStatus
   status: BookingStatus
   notes: string | null
 }
@@ -137,9 +154,12 @@ export async function createBooking(input: {
   service_id: number
   starts_at: string
   notes: string
-}): Promise<Booking> {
-  const { data } = await api.post<{ data: Booking }>('/api/v1/customer/bookings', input)
-  return data.data
+}): Promise<{ booking: Booking; checkout_url: string }> {
+  const { data } = await api.post<{ data: Booking; checkout_url: string }>(
+    '/api/v1/customer/bookings',
+    input,
+  )
+  return { booking: data.data, checkout_url: data.checkout_url }
 }
 
 export async function updateBookingStatus(

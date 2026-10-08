@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
-import { createBooking, getPublicServices, weekDays } from '../services/catalog'
+import { createBooking, formatCurrency, getPublicServices, weekDays } from '../services/catalog'
 import type { ServiceListing, VendorOpeningDay } from '../services/catalog'
 
 function localDateTimeMinimum(): string {
@@ -67,15 +67,12 @@ export function ServicesPage() {
     setError(null)
     setNotice(null)
     try {
-      await createBooking({
+      const result = await createBooking({
         service_id: bookingService.id,
         starts_at: new Date(startsAt).toISOString(),
         notes,
       })
-      setBookingService(null)
-      setStartsAt('')
-      setNotes('')
-      setNotice('Booking request sent. You can follow its status in your account.')
+      window.location.assign(result.checkout_url)
     } catch (requestError: unknown) {
       setError(getApiErrorMessage(requestError))
     } finally {
@@ -105,6 +102,12 @@ export function ServicesPage() {
         {loading && <p role="status">Loading services…</p>}
         {error && <p className="form-error" role="alert">{error}</p>}
         {notice && <p className="success-message" role="status">{notice}</p>}
+        {searchParams.get('payment') === 'cancelled' && (
+          <p className="success-message" role="status">
+            Checkout was cancelled. Your booking request is held until the checkout session expires.
+            <Link to="/customer"> View your bookings.</Link>
+          </p>
+        )}
         {!loading && !error && filteredServices.length === 0 && (
           <p className="empty-state">
             {services.length === 0 ? 'No services are available yet.' : 'No services match your search.'}
@@ -118,7 +121,7 @@ export function ServicesPage() {
                   <p className="service-category">{service.category}</p>
                   <h2>{service.name}</h2>
                 </div>
-                <p className="service-price">${Number(service.price).toFixed(2)}</p>
+                <p className="service-price">{formatCurrency(service.price)}</p>
               </div>
               <p>{service.description}</p>
               <p className="service-meta">
@@ -143,6 +146,10 @@ export function ServicesPage() {
         {bookingService && (
           <form className="catalog-form" onSubmit={handleBookingSubmit}>
             <h2>Request {bookingService.name}</h2>
+            <p className="form-hint">
+              Payment of {formatCurrency(bookingService.price)} is collected now. Paid bookings
+              are automatically refunded if cancelled or declined.
+            </p>
             <label htmlFor="booking-start">Start time</label>
             <input id="booking-start" type="datetime-local" required min={localDateTimeMinimum()}
               value={startsAt} onChange={(event) => setStartsAt(event.target.value)} />

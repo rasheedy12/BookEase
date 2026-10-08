@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\VendorProfile;
+use App\Services\PaystackPaymentService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -159,7 +160,7 @@ class AdminController extends Controller
     public function bookings(): JsonResponse
     {
         $bookings = Booking::query()
-            ->with(['customer:id,name,email', 'vendorProfile:id,business_name'])
+            ->with(['customer:id,name,email', 'vendorProfile:id,business_name', 'payments'])
             ->latest('starts_at')
             ->paginate(25);
 
@@ -173,14 +174,18 @@ class AdminController extends Controller
                 'starts_at' => $booking->starts_at->toIso8601String(),
                 'ends_at' => $booking->ends_at->toIso8601String(),
                 'price' => $booking->price,
+                'payment_status' => $booking->payments->sortByDesc('id')->first()?->status ?? 'unpaid',
                 'status' => $booking->status->value,
             ]),
             'meta' => $this->paginationMeta($bookings),
         ]);
     }
 
-    public function moderateBooking(Request $request, Booking $booking): JsonResponse
-    {
+    public function moderateBooking(
+        Request $request,
+        Booking $booking,
+        PaystackPaymentService $payments,
+    ): JsonResponse {
         $validated = $request->validate([
             'status' => ['required', Rule::in([
                 BookingStatus::REJECTED->value,
@@ -194,6 +199,7 @@ class AdminController extends Controller
             ]);
         }
 
+        $payments->refundBooking($booking);
         $booking->update(['status' => BookingStatus::from($validated['status'])]);
 
         return response()->json([

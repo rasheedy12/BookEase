@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\Service;
 use App\Models\VendorOpeningHour;
 use App\Models\VendorProfile;
+use App\Services\PaystackPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,6 +21,7 @@ class BookingController extends Controller
     public function customerIndex(Request $request): JsonResponse
     {
         $bookings = $request->user()->bookings()
+            ->with('payments')
             ->with('customer:id,name')
             ->with('vendorProfile.user:id,name')
             ->latest('starts_at')
@@ -31,6 +33,7 @@ class BookingController extends Controller
     public function vendorIndex(Request $request): JsonResponse
     {
         $bookings = $request->user()->vendorProfile?->bookings()
+            ->with('payments')
             ->with('customer:id,name')
             ->latest('starts_at')
             ->get() ?? collect();
@@ -38,7 +41,7 @@ class BookingController extends Controller
         return response()->json(['data' => $bookings->map(fn (Booking $booking) => $this->present($booking))]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, PaystackPaymentService $payments): JsonResponse
     {
         $validated = $request->validate([
             'service_id' => ['required', 'integer', 'exists:services,id'],
@@ -109,10 +112,15 @@ class BookingController extends Controller
             ]);
         });
 
-        return response()->json(['data' => $this->present($booking->load('customer:id,name'))], 201);
+        $checkout = $payments->createCheckoutSession($booking);
+
+        return response()->json([
+            'data' => $this->present($booking->load(['customer:id,name', 'payments'])),
+            'checkout_url' => $checkout['checkout_url'],
+        ], 201);
     }
 
-    public function updateStatus(Request $request, Booking $booking): JsonResponse
+    public function updateStatus(Request $request, Booking $booking, PaystackPaymentService $payments): JsonResponse
     {
         $validated = $request->validate([
             'status' => ['required', Rule::enum(BookingStatus::class)],
@@ -148,9 +156,13 @@ class BookingController extends Controller
             ]);
         }
 
+        if (in_array($newStatus, [BookingStatus::CANCELLED, BookingStatus::REJECTED], true)) {
+            $payments->refundBooking($booking);
+        }
+
         $booking->update(['status' => $newStatus]);
 
-        return response()->json(['data' => $this->present($booking->fresh(['customer:id,name']))]);
+        return response()->json(['data' => $this->present($booking->fresh(['customer:id,name', 'payments']))]);
     }
 
     /**
@@ -167,6 +179,7 @@ class BookingController extends Controller
             'starts_at' => $booking->starts_at->toIso8601String(),
             'ends_at' => $booking->ends_at->toIso8601String(),
             'price' => $booking->price,
+            'payment_status' => $booking->payments->sortByDesc('id')->first()?->status ?? 'unpaid',
             'status' => $booking->status->value,
             'notes' => $booking->notes,
         ];

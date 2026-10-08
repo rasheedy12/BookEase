@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BookingController;
+use App\Http\Controllers\Api\V1\PaystackWebhookController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\VendorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,7 @@ Route::get('/health', function () {
 });
 
 Route::get('/v1/services', [ServiceController::class, 'index']);
+Route::post('/v1/payments/paystack/webhook', PaystackWebhookController::class);
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->middleware('throttle:10,1')->group(function () {

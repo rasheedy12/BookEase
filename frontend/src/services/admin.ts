@@ -1,5 +1,5 @@
 import { api } from './api'
-import type { BookingStatus } from './catalog'
+import type { BookingStatus, PaymentStatus } from './catalog'
 import type { UserRole } from './auth'
 
 export type AdminSection = 'users' | 'vendors' | 'services' | 'bookings'
@@ -54,6 +54,7 @@ export interface AdminBooking {
   starts_at: string
   ends_at: string
   price: string
+  payment_status: PaymentStatus
   status: BookingStatus
 }
 

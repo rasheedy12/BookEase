@@ -37,6 +37,16 @@ php artisan serve --host=127.0.0.1 --port=8000
 
 The API health endpoint is available at <http://127.0.0.1:8000/api/health>.
 
+For booking checkout, set `PAYSTACK_SECRET_KEY` and `FRONTEND_URL` in
+`backend/.env`. Configure the webhook URL in the Paystack dashboard as
+`https://your-api-host/api/v1/payments/paystack/webhook` and subscribe to
+`charge.success`, `refund.processed`, and `refund.failed`. Paystack uses the
+secret key to sign webhook requests; BookEase verifies each successful
+transaction against Paystack before recording it as paid. Service prices and
+payments are denominated in Nigerian naira (NGN), and amounts are sent to
+Paystack in kobo. Use a Paystack test secret key for local development and
+expose the local API through a secure tunnel if testing webhooks locally.
+
 ### 3. Start the React frontend
 
 In a separate terminal:

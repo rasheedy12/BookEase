@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import {
   deleteService,
+  formatCurrency,
   getVendorAvailability,
   getVendorBookings,
   getVendorProfile,
@@ -371,7 +372,7 @@ export function VendorDashboardPage() {
                 onChange={(event) => setServiceForm({ ...serviceForm, duration_minutes: Number(event.target.value) })} />
             </div>
             <div>
-              <label htmlFor="service-price">Price ($)</label>
+              <label htmlFor="service-price">Price (NGN)</label>
               <input id="service-price" type="number" min={0} max={99999999.99} step="0.01" required
                 value={serviceForm.price}
                 onChange={(event) => setServiceForm({ ...serviceForm, price: Number(event.target.value) })} />
@@ -410,7 +411,7 @@ export function VendorDashboardPage() {
                   <p className="service-category">{service.category} · {service.is_active ? 'Published' : 'Hidden'}</p>
                   <h3>{service.name}</h3>
                 </div>
-                <p className="service-price">${Number(service.price).toFixed(2)}</p>
+                <p className="service-price">{formatCurrency(service.price)}</p>
               </div>
               <p>{service.description}</p>
               <div className="form-actions">
@@ -438,8 +439,9 @@ export function VendorDashboardPage() {
                   <p className="service-category">Booking #{booking.id} · {booking.status}</p>
                   <h3>{booking.service_name}</h3>
                 </div>
-                <p className="service-price">${Number(booking.price).toFixed(2)}</p>
+                <p className="service-price">{formatCurrency(booking.price)}</p>
               </div>
+              <p className="service-meta">Payment: {booking.payment_status}</p>
               <p>Customer: {booking.customer_name ?? 'Customer'}</p>
               <p className="service-meta">{new Intl.DateTimeFormat(undefined, {
                 dateStyle: 'medium',

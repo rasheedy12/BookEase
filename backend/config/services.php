@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    ],
+
 ];

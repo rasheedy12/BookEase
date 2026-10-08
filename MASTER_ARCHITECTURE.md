@@ -84,6 +84,10 @@ For local development, promote a known account with
 - Integrate a payment provider for booking-related transactions.
 - Track payment state and associate payments with bookings.
 - Handle payment success, failure, and relevant status updates.
+- Initial implementation: Paystack checkout in NGN is required when requesting
+  a booking; signed webhooks and server-side transaction verification track
+  payment outcomes, and paid bookings are automatically refunded when cancelled
+  or rejected.
 
 **Milestone:** Payments can be initiated and their outcomes are reflected in booking records.
 

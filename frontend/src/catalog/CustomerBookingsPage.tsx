@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '../services/apiError'
-import { getCustomerBookings, getPublicServices, updateBookingStatus } from '../services/catalog'
+import { formatCurrency, getCustomerBookings, getPublicServices, updateBookingStatus } from '../services/catalog'
 import type { Booking, ServiceListing } from '../services/catalog'
 
 function formatBookingTime(value: string): string {
@@ -15,6 +16,7 @@ function formatBookingTime(value: string): string {
 export function CustomerBookingsPage() {
   const { user, error: authError, logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<ServiceListing[]>([])
   const [serviceSearch, setServiceSearch] = useState('')
@@ -181,7 +183,7 @@ export function CustomerBookingsPage() {
                     <p className="service-category">{service.category}</p>
                     <h3>{service.name}</h3>
                   </div>
-                  <p className="service-price">${Number(service.price).toFixed(2)}</p>
+                  <p className="service-price">{formatCurrency(service.price)}</p>
                 </div>
                 <p>{service.description}</p>
                 <p className="service-meta">
@@ -209,6 +211,11 @@ export function CustomerBookingsPage() {
             <span className="customer-count">{bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'}</span>
           </div>
           {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
+          {searchParams.get('payment') === 'success' && (
+            <p className="success-message" role="status">
+              Payment submitted. Your booking and payment status will update when Paystack confirms it.
+            </p>
+          )}
           {loading && <p role="status">Loading your bookings…</p>}
           {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any bookings yet.</p>}
           <div className="service-list">
@@ -219,11 +226,12 @@ export function CustomerBookingsPage() {
                     <p className="service-category">Booking #{booking.id}</p>
                     <h2>{booking.service_name}</h2>
                   </div>
-                  <p className="service-price">${Number(booking.price).toFixed(2)}</p>
+                  <p className="service-price">{formatCurrency(booking.price)}</p>
                 </div>
                 <span className={`customer-booking-status customer-booking-status--${booking.status}`}>
                   {booking.status}
                 </span>
+                <p className="service-meta">Payment: {booking.payment_status}</p>
                 <p>{booking.business_name}</p>
                 <p className="service-meta">{formatBookingTime(booking.starts_at)}</p>
                 {booking.notes && <p>{booking.notes}</p>}
