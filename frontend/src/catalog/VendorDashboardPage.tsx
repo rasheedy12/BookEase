@@ -235,22 +235,47 @@ export function VendorDashboardPage() {
   }
 
   return (
-    <main className="page">
-      <section className="welcome-card catalog-card" aria-labelledby="vendor-title">
-        <Link className="brand-link" to="/">BookEase</Link>
-        <p className="eyebrow">BOOKEASE · VENDOR WORKSPACE</p>
-        <h1 id="vendor-title">Your business.</h1>
-        <p className="intro">Manage your public business profile and the services customers can discover.</p>
-        <p className="dashboard-links"><Link to="/services">View service directory</Link></p>
-        <button className="secondary-button signout-button" type="button" onClick={() => void handleLogout()} disabled={submitting}>
-          Sign out
-        </button>
+    <main className="page vendor-page">
+      <section className="welcome-card catalog-card vendor-card" aria-labelledby="vendor-title">
+        <header className="vendor-header">
+          <Link className="brand-link" to="/">BookEase</Link>
+          <div className="vendor-header__account">
+            <span>{profile.business_name || 'Vendor workspace'}</span>
+            <button className="secondary-button" type="button" onClick={() => void handleLogout()} disabled={submitting}>
+              Sign out
+            </button>
+          </div>
+        </header>
+        <div className="vendor-intro">
+          <p className="eyebrow">BOOKEASE · VENDOR WORKSPACE</p>
+          <h1 id="vendor-title">Your business</h1>
+          <p className="intro">Manage your public profile, availability, services, and incoming booking requests.</p>
+          <Link className="auth-link auth-link--primary" to="/services">View service directory</Link>
+        </div>
+        <section className="vendor-overview" aria-label="Business summary">
+          <article className="vendor-stat">
+            <span>Total services</span>
+            <strong>{services.length.toLocaleString()}</strong>
+            <small>In your service list</small>
+          </article>
+          <article className="vendor-stat">
+            <span>Published</span>
+            <strong>{services.filter((service) => service.is_active).length.toLocaleString()}</strong>
+            <small>Visible to customers</small>
+          </article>
+          <article className="vendor-stat vendor-stat--pending">
+            <span>Pending requests</span>
+            <strong>{bookings.filter((booking) => booking.status === 'pending').length.toLocaleString()}</strong>
+            <small>Waiting for your response</small>
+          </article>
+        </section>
         {loading && <p role="status">Loading your workspace…</p>}
         {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
         {notice && <p className="success-message" role="status">{notice}</p>}
 
-        <form className="catalog-form" onSubmit={handleProfileSubmit}>
+        <form className="catalog-form vendor-panel" onSubmit={handleProfileSubmit}>
           <h2>Business profile</h2>
+          <p className="form-hint">This information helps customers understand and find your business.</p>
           <label htmlFor="business-name">Business name</label>
           <input id="business-name" maxLength={255} required value={profile.business_name}
             onChange={(event) => setProfile({ ...profile, business_name: event.target.value })} />
@@ -274,7 +299,7 @@ export function VendorDashboardPage() {
           </button>
         </form>
 
-        <form className="catalog-form" onSubmit={handleAvailabilitySubmit}>
+        <form className="catalog-form vendor-panel" onSubmit={handleAvailabilitySubmit}>
           <h2>Weekly opening hours</h2>
           <p className="form-hint">Bookings must fit completely within your opening hours.</p>
           <label htmlFor="availability-timezone">Business timezone</label>
@@ -325,7 +350,7 @@ export function VendorDashboardPage() {
           </button>
         </form>
 
-        <form className="catalog-form" onSubmit={handleServiceSubmit}>
+        <form className="catalog-form vendor-panel" onSubmit={handleServiceSubmit}>
           <h2>{editingServiceId ? 'Edit service' : 'Add a service'}</h2>
           <label htmlFor="service-name">Service name</label>
           <input id="service-name" maxLength={255} required value={serviceForm.name}
@@ -368,8 +393,15 @@ export function VendorDashboardPage() {
           </div>
         </form>
 
-        <section className="vendor-service-list" aria-labelledby="vendor-services-title">
-          <h2 id="vendor-services-title">Your services</h2>
+        <section className="vendor-service-list vendor-panel" aria-labelledby="vendor-services-title">
+          <div className="vendor-panel__heading">
+            <div>
+              <p className="eyebrow">YOUR OFFERINGS</p>
+              <h2 id="vendor-services-title">Your services</h2>
+              <p>Manage the listings customers can discover.</p>
+            </div>
+            <span className="vendor-count">{services.length} {services.length === 1 ? 'service' : 'services'}</span>
+          </div>
           {!loading && services.length === 0 && <p className="empty-state">You haven’t added any services yet.</p>}
           {services.map((service) => (
             <article className="service-card" key={service.id}>
@@ -389,8 +421,15 @@ export function VendorDashboardPage() {
             </article>
           ))}
         </section>
-        <section className="vendor-service-list" aria-labelledby="vendor-bookings-title">
-          <h2 id="vendor-bookings-title">Booking requests</h2>
+        <section className="vendor-service-list vendor-panel" aria-labelledby="vendor-bookings-title">
+          <div className="vendor-panel__heading">
+            <div>
+              <p className="eyebrow">CUSTOMER ACTIVITY</p>
+              <h2 id="vendor-bookings-title">Booking requests</h2>
+              <p>Review appointments and respond to customers.</p>
+            </div>
+            <span className="vendor-count">{bookings.length} {bookings.length === 1 ? 'request' : 'requests'}</span>
+          </div>
           {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any booking requests yet.</p>}
           {bookings.map((booking) => (
             <article className="service-card" key={booking.id}>

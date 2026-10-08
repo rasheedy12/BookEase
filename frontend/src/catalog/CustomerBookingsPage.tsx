@@ -77,6 +77,10 @@ export function CustomerBookingsPage() {
     ].some((field) => field?.toLocaleLowerCase().includes(query))
     return matchesCategory && matchesSearch
   })
+  const upcomingBookings = bookings.filter((booking) =>
+    ['pending', 'confirmed'].includes(booking.status) && new Date(booking.starts_at) > new Date(),
+  ).length
+  const pendingBookings = bookings.filter((booking) => booking.status === 'pending').length
 
   async function cancelBooking(bookingId: number) {
     setSubmitting(true)
@@ -97,16 +101,43 @@ export function CustomerBookingsPage() {
   }
 
   return (
-    <main className="page">
-      <section className="welcome-card catalog-card" aria-labelledby="customer-bookings-title">
-        <Link className="brand-link" to="/">BookEase</Link>
-        <p className="eyebrow">BOOKEASE · CUSTOMER ACCOUNT</p>
-        <h1 id="customer-bookings-title">Your bookings.</h1>
-        <p className="intro">Hello {user?.name}. Review your booking requests and their status.</p>
+    <main className="page customer-page">
+      <section className="welcome-card catalog-card customer-card" aria-labelledby="customer-bookings-title">
+        <header className="customer-header">
+          <Link className="brand-link" to="/">BookEase</Link>
+          <div className="customer-header__account">
+            <span>{user?.name}</span>
+            <button className="secondary-button" type="button" onClick={() => void handleLogout()} disabled={submitting}>
+              Sign out
+            </button>
+          </div>
+        </header>
+        <div className="customer-intro">
+          <p className="eyebrow">BOOKEASE · CUSTOMER ACCOUNT</p>
+          <h1 id="customer-bookings-title">Your bookings</h1>
+          <p className="intro">Welcome back, {user?.name}. Keep track of appointments and find your next service.</p>
+        </div>
+        <section className="customer-overview" aria-label="Booking summary">
+          <article className="customer-stat">
+            <span>Total bookings</span>
+            <strong>{bookings.length.toLocaleString()}</strong>
+            <small>Your booking history</small>
+          </article>
+          <article className="customer-stat">
+            <span>Upcoming</span>
+            <strong>{upcomingBookings.toLocaleString()}</strong>
+            <small>Pending or confirmed</small>
+          </article>
+          <article className="customer-stat customer-stat--pending">
+            <span>Awaiting confirmation</span>
+            <strong>{pendingBookings.toLocaleString()}</strong>
+            <small>Pending requests</small>
+          </article>
+        </section>
         <section className="customer-discovery" aria-labelledby="customer-services-title">
           <div className="customer-discovery__heading">
             <div>
-              <p className="eyebrow">FIND YOUR NEXT SERVICE</p>
+              <p className="eyebrow">DISCOVER SOMETHING NEW</p>
               <h2 id="customer-services-title">Explore local services</h2>
               <p className="form-hint">Search by service, category, business, or location.</p>
             </div>
@@ -169,7 +200,14 @@ export function CustomerBookingsPage() {
           </div>
         </section>
         <section className="customer-bookings" aria-labelledby="customer-bookings-list-title">
-          <h2 id="customer-bookings-list-title">Your booking requests</h2>
+          <div className="customer-section-heading">
+            <div>
+              <p className="eyebrow">YOUR ACTIVITY</p>
+              <h2 id="customer-bookings-list-title">Booking history</h2>
+              <p>Review appointment details and manage upcoming bookings.</p>
+            </div>
+            <span className="customer-count">{bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'}</span>
+          </div>
           {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
           {loading && <p role="status">Loading your bookings…</p>}
           {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any bookings yet.</p>}
@@ -178,11 +216,14 @@ export function CustomerBookingsPage() {
               <article className="service-card" key={booking.id}>
                 <div className="service-card__heading">
                   <div>
-                    <p className="service-category">Booking #{booking.id} · {booking.status}</p>
+                    <p className="service-category">Booking #{booking.id}</p>
                     <h2>{booking.service_name}</h2>
                   </div>
                   <p className="service-price">${Number(booking.price).toFixed(2)}</p>
                 </div>
+                <span className={`customer-booking-status customer-booking-status--${booking.status}`}>
+                  {booking.status}
+                </span>
                 <p>{booking.business_name}</p>
                 <p className="service-meta">{formatBookingTime(booking.starts_at)}</p>
                 {booking.notes && <p>{booking.notes}</p>}
@@ -194,9 +235,6 @@ export function CustomerBookingsPage() {
             ))}
           </div>
         </section>
-        <button className="secondary-button signout-button" type="button" onClick={() => void handleLogout()}>
-          Sign out
-        </button>
       </section>
     </main>
   )

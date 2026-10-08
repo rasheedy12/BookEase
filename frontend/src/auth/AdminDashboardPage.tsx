@@ -120,36 +120,58 @@ export function AdminDashboardPage() {
     setNotice(null)
   }
 
+  const sectionDescription: Record<AdminSection, string> = {
+    users: 'Manage platform access and review registered accounts.',
+    vendors: 'Review provider profiles and their published service counts.',
+    services: 'Control which service listings are visible to customers.',
+    bookings: 'Review booking activity and moderate pending requests.',
+  }
+
   return (
-    <main className="page">
+    <main className="page admin-page">
       <section className="welcome-card catalog-card admin-card" aria-labelledby="admin-title">
-        <Link className="brand-link" to="/">BookEase</Link>
-        <p className="eyebrow">BOOKEASE · ADMINISTRATION</p>
-        <h1 id="admin-title">Platform overview.</h1>
-        <p className="intro">Review accounts, vendors, service listings, and bookings.</p>
+        <header className="admin-header">
+          <Link className="brand-link" to="/">BookEase</Link>
+          <div className="admin-header__account">
+            <span>{user?.name}</span>
+            <button className="secondary-button" type="button" onClick={() => void handleLogout()}>
+              Sign out
+            </button>
+          </div>
+        </header>
+        <div className="admin-intro">
+          <p className="eyebrow">BOOKEASE · ADMINISTRATION</p>
+          <h1 id="admin-title">Platform overview</h1>
+          <p className="intro">Monitor platform activity and manage accounts, providers, services, and bookings.</p>
+        </div>
         <section className="admin-overview" aria-label="Platform summary">
           {overviewLoading && <p role="status">Loading platform summary…</p>}
           {overview && (
             <>
-              <article className="admin-stat">
+              <article className="admin-stat admin-stat--users">
                 <span>Total users</span>
                 <strong>{overview.users_total.toLocaleString()}</strong>
+                <small>Registered accounts</small>
               </article>
-              <article className="admin-stat">
+              <article className="admin-stat admin-stat--active">
                 <span>Active users</span>
                 <strong>{overview.users_active.toLocaleString()}</strong>
+                <small>Enabled accounts</small>
               </article>
-              <article className="admin-stat">
+              <article className="admin-stat admin-stat--vendors">
                 <span>Vendors</span>
                 <strong>{overview.vendors_total.toLocaleString()}</strong>
+                <small>Provider profiles</small>
               </article>
-              <article className="admin-stat">
+              <article className="admin-stat admin-stat--services">
                 <span>Published services</span>
                 <strong>{overview.services_published.toLocaleString()}</strong>
+                <small>Visible to customers</small>
               </article>
-              <article className="admin-stat">
+              <article className="admin-stat admin-stat--bookings">
                 <span>Pending bookings</span>
                 <strong>{overview.bookings_pending.toLocaleString()}</strong>
+                <small>Awaiting a decision</small>
               </article>
             </>
           )}
@@ -164,10 +186,15 @@ export function AdminDashboardPage() {
             </button>
           ))}
         </nav>
-        <div className="admin-section-heading">
-          <h2>{sections.find((item) => item.id === section)?.label}</h2>
-          {pagination && <span>{pagination.total} total</span>}
-        </div>
+        <section className="admin-section">
+          <div className="admin-section-heading">
+            <div>
+              <p className="eyebrow">MANAGE PLATFORM</p>
+              <h2>{sections.find((item) => item.id === section)?.label}</h2>
+              <p>{sectionDescription[section]}</p>
+            </div>
+            {pagination && <span className="admin-total">{pagination.total.toLocaleString()} records</span>}
+          </div>
         {(error || authError || overviewError) && (
           <p className="form-error" role="alert">{error ?? authError ?? overviewError}</p>
         )}
@@ -175,7 +202,7 @@ export function AdminDashboardPage() {
         {loading && <p role="status">Loading {section}…</p>}
         {!loading && records.length === 0 && <p className="empty-state">No {section} to display.</p>}
 
-        <div className="admin-record-list">
+        <div className="admin-record-list" aria-busy={loading}>
           {section === 'users' && (records as AdminUser[]).map((record) => (
             <article className="service-card admin-record" key={record.id}>
               <div>
@@ -258,9 +285,7 @@ export function AdminDashboardPage() {
               onClick={() => setPage((current) => current + 1)}>Next</button>
           </div>
         )}
-        <button className="secondary-button signout-button" type="button" onClick={() => void handleLogout()}>
-          Sign out
-        </button>
+        </section>
       </section>
     </main>
   )
