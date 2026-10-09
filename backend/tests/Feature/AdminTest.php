@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\BookingStatus;
 use App\Enums\UserRole;
 use App\Models\Booking;
-use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,7 +49,9 @@ class AdminTest extends TestCase
             ->assertJsonPath('data.users_active', 3)
             ->assertJsonPath('data.vendors_total', 1)
             ->assertJsonPath('data.services_published', 1)
-            ->assertJsonPath('data.bookings_pending', 1);
+            ->assertJsonPath('data.bookings_pending', 1)
+            ->assertJsonCount(7, 'data.bookings_this_week')
+            ->assertJsonFragment(['day' => now()->format('D'), 'count' => 1]);
 
         $this->actingAs($admin, 'sanctum')
             ->getJson('/api/v1/admin/users')

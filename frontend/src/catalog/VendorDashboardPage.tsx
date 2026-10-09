@@ -52,9 +52,27 @@ const emptyAvailability: VendorAvailability = {
   })),
 }
 
+type VendorSection = 'dashboard' | 'services' | 'bookings' | 'profile'
+
+function VendorIcon({ name }: { name: 'grid' | 'users' | 'scissors' | 'calendar' | 'check' | 'clock' }) {
+  const common = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, strokeWidth: 1.8 }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" {...common}>
+      {name === 'grid' && <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>}
+      {name === 'users' && <><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20" /><circle cx="10" cy="8" r="3.5" /><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4" /></>}
+      {name === 'scissors' && <><circle cx="6" cy="6" r="2.5" /><circle cx="6" cy="18" r="2.5" /><path d="m8 8 12 12M8 16 20 4M14 10l-2 2" /></>}
+      {name === 'calendar' && <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></>}
+      {name === 'check' && <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>}
+      {name === 'clock' && <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>}
+    </svg>
+  )
+}
+
 export function VendorDashboardPage() {
   const { error: authError, logout } = useAuth()
   const navigate = useNavigate()
+  const [vendorSection, setVendorSection] = useState<VendorSection>('dashboard')
   const [profile, setProfile] = useState<VendorProfileInput>(emptyProfile)
   const [services, setServices] = useState<ServiceListing[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -66,6 +84,8 @@ export function VendorDashboardPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const pendingBookings = bookings.filter((booking) => booking.status === 'pending').length
+  const confirmedBookings = bookings.filter((booking) => booking.status === 'confirmed').length
 
   async function reloadVendorData() {
     const [savedProfile, savedServices, savedBookings, savedAvailability] = await Promise.all([
@@ -236,45 +256,108 @@ export function VendorDashboardPage() {
   }
 
   return (
-    <main className="page vendor-page">
-      <section className="welcome-card catalog-card vendor-card" aria-labelledby="vendor-title">
-        <header className="vendor-header">
-          <Link className="brand-link" to="/">BookEase</Link>
-          <div className="vendor-header__account">
-            <span>{profile.business_name || 'Vendor workspace'}</span>
-            <button className="secondary-button" type="button" onClick={() => void handleLogout()} disabled={submitting}>
-              Sign out
-            </button>
+    <main className="page vendor-page vendor-dashboard" aria-labelledby="vendor-title">
+      <aside className="vendor-sidebar">
+        <Link className="vendor-brand" to="/"><span className="vendor-brand__icon"><VendorIcon name="calendar" /></span>BookEase</Link>
+        <nav className="vendor-side-nav" aria-label="Vendor navigation">
+          <button className={`vendor-side-link${vendorSection === 'dashboard' ? ' vendor-side-link--active' : ''}`}
+            type="button" aria-current={vendorSection === 'dashboard' ? 'page' : undefined}
+            onClick={() => setVendorSection('dashboard')}><VendorIcon name="grid" />Dashboard</button>
+          <button className={`vendor-side-link${vendorSection === 'services' ? ' vendor-side-link--active' : ''}`}
+            type="button" aria-current={vendorSection === 'services' ? 'page' : undefined}
+            onClick={() => setVendorSection('services')}><VendorIcon name="scissors" />My services</button>
+          <button className={`vendor-side-link${vendorSection === 'bookings' ? ' vendor-side-link--active' : ''}`}
+            type="button" aria-current={vendorSection === 'bookings' ? 'page' : undefined}
+            onClick={() => setVendorSection('bookings')}><VendorIcon name="calendar" />Bookings</button>
+          <button className={`vendor-side-link${vendorSection === 'profile' ? ' vendor-side-link--active' : ''}`}
+            type="button" aria-current={vendorSection === 'profile' ? 'page' : undefined}
+            onClick={() => setVendorSection('profile')}><VendorIcon name="users" />Profile</button>
+        </nav>
+        <button className="vendor-signout" type="button" onClick={() => void handleLogout()} disabled={submitting}>Sign out</button>
+      </aside>
+
+      <div className="vendor-workspace">
+        <header className="vendor-topbar">
+          <div className="vendor-breadcrumb">BookEase <span>/</span> Vendor workspace</div>
+          <div className="vendor-profile">
+            <span className="vendor-profile__avatar">{(profile.business_name || 'V').charAt(0).toUpperCase()}</span>
+            <span><strong>{profile.business_name || 'Your business'}</strong><small>Vendor</small></span>
           </div>
         </header>
-        <div className="vendor-intro">
-          <p className="eyebrow">BOOKEASE · VENDOR WORKSPACE</p>
-          <h1 id="vendor-title">Your business</h1>
-          <p className="intro">Manage your public profile, availability, services, and incoming booking requests.</p>
-          <Link className="auth-link auth-link--primary" to="/services">View service directory</Link>
-        </div>
-        <section className="vendor-overview" aria-label="Business summary">
-          <article className="vendor-stat">
-            <span>Total services</span>
-            <strong>{services.length.toLocaleString()}</strong>
-            <small>In your service list</small>
-          </article>
-          <article className="vendor-stat">
-            <span>Published</span>
-            <strong>{services.filter((service) => service.is_active).length.toLocaleString()}</strong>
-            <small>Visible to customers</small>
-          </article>
-          <article className="vendor-stat vendor-stat--pending">
-            <span>Pending requests</span>
-            <strong>{bookings.filter((booking) => booking.status === 'pending').length.toLocaleString()}</strong>
-            <small>Waiting for your response</small>
-          </article>
-        </section>
-        {loading && <p role="status">Loading your workspace…</p>}
-        {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
-        {notice && <p className="success-message" role="status">{notice}</p>}
 
-        <form className="catalog-form vendor-panel" onSubmit={handleProfileSubmit}>
+        <div className="vendor-content">
+          <div className="vendor-intro" id="vendor-title">
+            <div>
+              <p className="eyebrow">BOOKEASE · VENDOR WORKSPACE</p>
+              <h1>{vendorSection === 'dashboard' ? 'Dashboard' : vendorSection === 'services' ? 'My services' : vendorSection === 'bookings' ? 'Bookings' : 'Profile'}</h1>
+              <p className="intro">{vendorSection === 'dashboard'
+                ? 'A quick overview of your business activity.'
+                : vendorSection === 'services'
+                  ? 'Manage the services customers can discover and book.'
+                  : vendorSection === 'bookings'
+                    ? 'Review appointments and respond to your customers.'
+                    : 'Manage your business details and weekly opening hours.'}</p>
+            </div>
+            {vendorSection === 'services' && <button className="vendor-primary-link" type="button"
+              onClick={() => document.getElementById('vendor-add-service')?.scrollIntoView({ behavior: 'smooth' })}>Add service</button>}
+          </div>
+          <section className="vendor-overview" aria-label="Business summary" hidden={vendorSection !== 'dashboard'}>
+            <article className="vendor-stat"><div><span>Total services</span><VendorIcon name="scissors" /></div><strong>{services.length.toLocaleString()}</strong><small>In your service list</small></article>
+            <article className="vendor-stat"><div><span>Published</span><VendorIcon name="check" /></div><strong>{services.filter((service) => service.is_active).length.toLocaleString()}</strong><small>Visible to customers</small></article>
+            <article className="vendor-stat vendor-stat--pending"><div><span>Pending requests</span><VendorIcon name="clock" /></div><strong>{pendingBookings.toLocaleString()}</strong><small>Waiting for your response</small></article>
+            <article className="vendor-stat"><div><span>Confirmed bookings</span><VendorIcon name="calendar" /></div><strong>{confirmedBookings.toLocaleString()}</strong><small>Scheduled appointments</small></article>
+          </section>
+          {loading && <p role="status">Loading your workspace…</p>}
+          {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
+          {notice && <p className="success-message" role="status">{notice}</p>}
+
+          <div className="vendor-work-grid">
+            <section id="vendor-services" className="vendor-service-list vendor-panel vendor-dashboard-panel" aria-labelledby="vendor-services-title" hidden={vendorSection !== 'services'}>
+              <div className="vendor-panel__heading">
+                <div><p className="eyebrow">YOUR OFFERINGS</p><h2 id="vendor-services-title">My services</h2><p>Manage the listings customers can discover.</p></div>
+                <span className="vendor-count">{services.length} {services.length === 1 ? 'service' : 'services'}</span>
+              </div>
+              {!loading && services.length === 0 && <p className="empty-state">You haven’t added any services yet.</p>}
+              {services.length > 0 && <div className="vendor-table-wrap"><table className="vendor-table">
+                <thead><tr><th>Service</th><th>Duration</th><th>Price</th><th>Status</th><th /></tr></thead>
+                <tbody>{services.map((service) => <tr key={service.id}>
+                  <td className="vendor-table__primary">{service.name}<small>{service.category}</small></td>
+                  <td>{service.duration_minutes} min</td><td>{formatCurrency(service.price)}</td>
+                  <td><span className={`vendor-status${service.is_active ? ' vendor-status--active' : ''}`}>{service.is_active ? 'Published' : 'Draft'}</span></td>
+                  <td><button className="vendor-action" type="button" onClick={() => editService(service)}>Edit</button><button className="vendor-action vendor-action--danger" type="button" disabled={submitting} onClick={() => void handleDelete(service.id)}>Delete</button></td>
+                </tr>)}</tbody>
+              </table></div>}
+            </section>
+
+            <section id="vendor-bookings" className="vendor-service-list vendor-panel vendor-dashboard-panel" aria-labelledby="vendor-bookings-title" hidden={vendorSection !== 'bookings'}>
+              <div className="vendor-panel__heading">
+                <div><p className="eyebrow">CUSTOMER ACTIVITY</p><h2 id="vendor-bookings-title">Booking requests</h2><p>Review appointments and respond to customers.</p></div>
+                <span className="vendor-count">{bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'}</span>
+              </div>
+              {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any booking requests yet.</p>}
+              <div className="vendor-booking-list">
+                {bookings.map((booking) => (
+                  <article className="vendor-booking" key={booking.id}>
+                    <div className="vendor-booking__top"><span className={`vendor-status${booking.status === 'confirmed' ? ' vendor-status--active' : ''}`}>{booking.status}</span><strong>{formatCurrency(booking.price)}</strong></div>
+                    <h3>{booking.service_name}</h3>
+                    <p>{booking.customer_name ?? 'Customer'} · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(booking.starts_at))}</p>
+                    <small>Payment: {booking.payment_status}</small>
+                    {booking.notes && <p>{booking.notes}</p>}
+                    <div className="vendor-booking__actions">
+                      {booking.status === 'pending' && <>
+                        <button className="vendor-action vendor-action--primary" type="button" disabled={submitting} onClick={() => void handleBookingStatus(booking.id, 'confirmed')}>Accept</button>
+                        <button className="vendor-action" type="button" disabled={submitting} onClick={() => void handleBookingStatus(booking.id, 'rejected')}>Decline</button>
+                      </>}
+                      {booking.status === 'confirmed' && <button className="vendor-action" type="button" disabled={submitting} onClick={() => void handleBookingStatus(booking.id, 'completed')}>Mark complete</button>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
+
+        <div className={`vendor-settings-grid vendor-settings-grid--${vendorSection}`}>
+        <form id="vendor-profile" className="catalog-form vendor-panel vendor-settings-panel" onSubmit={handleProfileSubmit} hidden={vendorSection !== 'profile'}>
           <h2>Business profile</h2>
           <p className="form-hint">This information helps customers understand and find your business.</p>
           <label htmlFor="business-name">Business name</label>
@@ -300,7 +383,7 @@ export function VendorDashboardPage() {
           </button>
         </form>
 
-        <form className="catalog-form vendor-panel" onSubmit={handleAvailabilitySubmit}>
+        <form id="vendor-availability" className="catalog-form vendor-panel vendor-settings-panel" onSubmit={handleAvailabilitySubmit} hidden={vendorSection !== 'profile'}>
           <h2>Weekly opening hours</h2>
           <p className="form-hint">Bookings must fit completely within your opening hours.</p>
           <label htmlFor="availability-timezone">Business timezone</label>
@@ -351,7 +434,7 @@ export function VendorDashboardPage() {
           </button>
         </form>
 
-        <form className="catalog-form vendor-panel" onSubmit={handleServiceSubmit}>
+        <form id="vendor-add-service" className="catalog-form vendor-panel vendor-settings-panel" onSubmit={handleServiceSubmit} hidden={vendorSection !== 'services'}>
           <h2>{editingServiceId ? 'Edit service' : 'Add a service'}</h2>
           <label htmlFor="service-name">Service name</label>
           <input id="service-name" maxLength={255} required value={serviceForm.name}
@@ -394,76 +477,9 @@ export function VendorDashboardPage() {
           </div>
         </form>
 
-        <section className="vendor-service-list vendor-panel" aria-labelledby="vendor-services-title">
-          <div className="vendor-panel__heading">
-            <div>
-              <p className="eyebrow">YOUR OFFERINGS</p>
-              <h2 id="vendor-services-title">Your services</h2>
-              <p>Manage the listings customers can discover.</p>
-            </div>
-            <span className="vendor-count">{services.length} {services.length === 1 ? 'service' : 'services'}</span>
-          </div>
-          {!loading && services.length === 0 && <p className="empty-state">You haven’t added any services yet.</p>}
-          {services.map((service) => (
-            <article className="service-card" key={service.id}>
-              <div className="service-card__heading">
-                <div>
-                  <p className="service-category">{service.category} · {service.is_active ? 'Published' : 'Hidden'}</p>
-                  <h3>{service.name}</h3>
-                </div>
-                <p className="service-price">{formatCurrency(service.price)}</p>
-              </div>
-              <p>{service.description}</p>
-              <div className="form-actions">
-                <button className="secondary-button" type="button" onClick={() => editService(service)}>Edit</button>
-                <button className="secondary-button" type="button" disabled={submitting}
-                  onClick={() => void handleDelete(service.id)}>Delete</button>
-              </div>
-            </article>
-          ))}
-        </section>
-        <section className="vendor-service-list vendor-panel" aria-labelledby="vendor-bookings-title">
-          <div className="vendor-panel__heading">
-            <div>
-              <p className="eyebrow">CUSTOMER ACTIVITY</p>
-              <h2 id="vendor-bookings-title">Booking requests</h2>
-              <p>Review appointments and respond to customers.</p>
-            </div>
-            <span className="vendor-count">{bookings.length} {bookings.length === 1 ? 'request' : 'requests'}</span>
-          </div>
-          {!loading && bookings.length === 0 && <p className="empty-state">You don’t have any booking requests yet.</p>}
-          {bookings.map((booking) => (
-            <article className="service-card" key={booking.id}>
-              <div className="service-card__heading">
-                <div>
-                  <p className="service-category">Booking #{booking.id} · {booking.status}</p>
-                  <h3>{booking.service_name}</h3>
-                </div>
-                <p className="service-price">{formatCurrency(booking.price)}</p>
-              </div>
-              <p className="service-meta">Payment: {booking.payment_status}</p>
-              <p>Customer: {booking.customer_name ?? 'Customer'}</p>
-              <p className="service-meta">{new Intl.DateTimeFormat(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              }).format(new Date(booking.starts_at))}</p>
-              {booking.notes && <p>{booking.notes}</p>}
-              <div className="form-actions">
-                {booking.status === 'pending' && <>
-                  <button className="secondary-button" type="button" disabled={submitting}
-                    onClick={() => void handleBookingStatus(booking.id, 'confirmed')}>Confirm</button>
-                  <button className="secondary-button" type="button" disabled={submitting}
-                    onClick={() => void handleBookingStatus(booking.id, 'rejected')}>Decline</button>
-                </>}
-                {booking.status === 'confirmed' && (
-                  <button className="secondary-button" type="button" disabled={submitting}
-                    onClick={() => void handleBookingStatus(booking.id, 'completed')}>Mark complete</button>
-                )}
-              </div>
-            </article>
-          ))}
-        </section>
-      </section>
+        </div>
+        </div>
+      </div>
     </main>
   )
 }

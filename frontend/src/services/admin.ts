@@ -16,6 +16,7 @@ export interface AdminOverview {
   vendors_total: number
   services_published: number
   bookings_pending: number
+  bookings_this_week: { day: string; count: number }[]
 }
 
 export interface AdminUser {

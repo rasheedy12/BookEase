@@ -21,6 +21,12 @@ class AdminController extends Controller
 {
     public function overview(): JsonResponse
     {
+        $weekStart = now()->startOfWeek();
+        $bookingsByDay = Booking::query()
+            ->whereBetween('created_at', [$weekStart, $weekStart->copy()->endOfWeek()])
+            ->get(['created_at'])
+            ->countBy(fn (Booking $booking): string => $booking->created_at->format('Y-m-d'));
+
         return response()->json([
             'data' => [
                 'users_total' => User::query()->count(),
@@ -33,6 +39,12 @@ class AdminController extends Controller
                 'bookings_pending' => Booking::query()
                     ->where('status', BookingStatus::PENDING->value)
                     ->count(),
+                'bookings_this_week' => collect(range(0, 6))
+                    ->map(fn (int $day): array => [
+                        'day' => $weekStart->copy()->addDays($day)->format('D'),
+                        'count' => $bookingsByDay->get($weekStart->copy()->addDays($day)->format('Y-m-d'), 0),
+                    ])
+                    ->all(),
             ],
         ]);
     }
