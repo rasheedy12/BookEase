@@ -4131,11 +4131,13 @@ h1 {
 }
 
 .receipt-page {
-  width: min(100%, 820px);
+  width: min(100%, 680px);
+  justify-self: center;
 }
 
 .receipt-card {
   width: 100%;
+  padding: clamp(24px, 3vw, 36px);
 }
 
 .receipt-header,
