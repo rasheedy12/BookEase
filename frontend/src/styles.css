@@ -5065,3 +5065,467 @@ h1 {
     display: none;
   }
 }
+
+.theme-toggle {
+  position: fixed;
+  z-index: 20;
+  right: 20px;
+  bottom: 20px;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid #34435a;
+  border-radius: 999px;
+  color: #eff4fc;
+  background: #182337;
+  box-shadow: 0 8px 24px rgb(12 20 34 / 20%);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: #5b9aff;
+  background: #223653;
+}
+
+.theme-toggle svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e8eef9;
+  background: #101827;
+}
+
+:root[data-theme="dark"] body {
+  color: #e8eef9;
+  background: #101827;
+}
+
+:root[data-theme="dark"] .page:not(.vendor-dashboard):not(.customer-dashboard):not(.admin-dashboard) {
+  color: #e8eef9;
+  background: #101827;
+}
+
+:root[data-theme="dark"] .welcome-card,
+:root[data-theme="dark"] .receipt-card {
+  border-color: #29364b;
+  color: #e8eef9;
+  background: #182337;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 24%);
+}
+
+:root[data-theme="dark"] .welcome-card h1,
+:root[data-theme="dark"] .welcome-card h2,
+:root[data-theme="dark"] .receipt-card h1,
+:root[data-theme="dark"] .receipt-card h2,
+:root[data-theme="dark"] .receipt-number strong {
+  color: #f2f6fd;
+}
+
+:root[data-theme="dark"] .welcome-card .intro,
+:root[data-theme="dark"] .receipt-success > p:last-child,
+:root[data-theme="dark"] .receipt-thanks,
+:root[data-theme="dark"] .receipt-number,
+:root[data-theme="dark"] .receipt-details dt {
+  color: #a0aec1;
+}
+
+:root[data-theme="dark"] .welcome-card .auth-form label {
+  color: #d2dbea;
+}
+
+:root[data-theme="dark"] .welcome-card .auth-form input,
+:root[data-theme="dark"] .welcome-card .auth-form select,
+:root[data-theme="dark"] .receipt-details section {
+  border-color: #34435a;
+  color: #e8eef9;
+  background: #151f30;
+}
+
+:root[data-theme="dark"] .receipt-success,
+:root[data-theme="dark"] .receipt-details dl > div {
+  border-color: #34435a;
+}
+
+:root[data-theme="dark"] .receipt-total {
+  color: #c5efd9;
+  background: #173c36;
+}
+
+:root[data-theme="dark"] .receipt-details dd {
+  color: #e8eef9;
+}
+
+:root[data-theme="dark"] .secondary-button,
+:root[data-theme="dark"] .auth-link:not(.auth-link--primary) {
+  border-color: #34435a;
+  color: #c4d2e5;
+  background: #192438;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+  border-color: #d7e0ed;
+  color: #253246;
+  background: #f7f9fc;
+}
+
+:root[data-theme="dark"] .theme-toggle:hover {
+  border-color: #fff;
+  background: #e8eef7;
+}
+
+:root[data-theme="light"] .theme-toggle {
+  border-color: #d9e1eb;
+  color: #344054;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(31 45 61 / 14%);
+}
+
+:root[data-theme="light"] .theme-toggle:hover {
+  border-color: #a9bbd0;
+  background: #f1f5f9;
+}
+
+:root[data-theme="light"] .auth-page {
+  background: #f3f6fa;
+}
+
+:root[data-theme="light"] .auth-promo {
+  border-color: #e1e8f0;
+  color: #344054;
+  background: linear-gradient(145deg, #fff, #edf3f8);
+}
+
+:root[data-theme="light"] .auth-promo__copy h1,
+:root[data-theme="light"] .auth-preview strong {
+  color: #1f2937;
+}
+
+:root[data-theme="light"] .auth-promo__copy > p:last-child,
+:root[data-theme="light"] .auth-preview small,
+:root[data-theme="light"] .auth-promo__foot {
+  color: #667085;
+}
+
+:root[data-theme="light"] .auth-preview {
+  border-color: #dce5ec;
+  background: #fff;
+  box-shadow: 0 22px 50px rgb(31 45 61 / 10%);
+}
+
+:root[data-theme="light"] .auth-preview__top {
+  color: #667085;
+}
+
+:root[data-theme="light"] .auth-preview__event {
+  border-color: #e2e8ee;
+  background: #f7fafc;
+}
+
+:root[data-theme="light"] .home-page {
+  color: #243247;
+  background:
+    radial-gradient(ellipse at 75% 24%, rgb(75 140 255 / 10%), transparent 38%),
+    #f5f8fc;
+}
+
+:root[data-theme="light"] .home-header,
+:root[data-theme="light"] .home-how,
+:root[data-theme="light"] .home-footer {
+  border-color: #dfe6ef;
+}
+
+:root[data-theme="light"] .home-brand,
+:root[data-theme="light"] .home-section-heading h2,
+:root[data-theme="light"] .home-vendor-cta h2 {
+  color: #1f2937;
+}
+
+:root[data-theme="light"] .home-nav a {
+  color: #526174;
+}
+
+:root[data-theme="light"] .home-nav a:hover {
+  color: #1f2937;
+  background: #e9eff6;
+}
+
+:root[data-theme="light"] .home-nav .home-nav__primary {
+  border-color: #4b8cff;
+  color: #fff;
+  background: #4b8cff;
+}
+
+:root[data-theme="light"] .home-hero__copy h1 {
+  color: #182638;
+}
+
+:root[data-theme="light"] .home-eyebrow,
+:root[data-theme="light"] .home-section-heading > a,
+:root[data-theme="light"] .home-vendor-cta > a {
+  color: #2867c5;
+}
+
+:root[data-theme="light"] .home-hero__description,
+:root[data-theme="light"] .home-categories > span,
+:root[data-theme="light"] .home-trust small,
+:root[data-theme="light"] .home-step p,
+:root[data-theme="light"] .home-footer > span,
+:root[data-theme="light"] .home-footer > a:last-child {
+  color: #66758a;
+}
+
+:root[data-theme="light"] .home-search input {
+  border-color: #d6dee8;
+  color: #293548;
+  background: #fff;
+}
+
+:root[data-theme="light"] .home-search input::placeholder {
+  color: #8794a6;
+}
+
+:root[data-theme="light"] .home-categories a {
+  border-color: #d9e3ef;
+  color: #426284;
+  background: #fff;
+}
+
+:root[data-theme="light"] .home-trust strong,
+:root[data-theme="light"] .home-step h3 {
+  color: #344054;
+}
+
+:root[data-theme="light"] .home-booking-card,
+:root[data-theme="light"] .home-step {
+  border-color: #dce5ef;
+  background: #fff;
+  box-shadow: 0 18px 50px rgb(31 45 61 / 9%);
+}
+
+:root[data-theme="light"] .home-booking-card__heading strong,
+:root[data-theme="light"] .home-timeline-step strong {
+  color: #344054;
+}
+
+:root[data-theme="light"] .home-booking-card__heading small,
+:root[data-theme="light"] .home-timeline-step small {
+  color: #758399;
+}
+
+:root[data-theme="light"] .home-timeline-step > span {
+  border-color: #d7e1ec;
+  color: #526174;
+  background: #f1f5f9;
+}
+
+:root[data-theme="light"] .home-timeline-line {
+  border-color: #cbd6e3;
+}
+
+:root[data-theme="light"] .home-booking-card__footer {
+  border-color: #dce5ef;
+  background: #f7fafc;
+}
+
+:root[data-theme="light"] .home-floating-note {
+  border-color: #dce5ef;
+  background: #fff;
+  box-shadow: 0 14px 35px rgb(31 45 61 / 14%);
+}
+
+:root[data-theme="light"] .home-floating-note strong {
+  color: #344054;
+}
+
+:root[data-theme="light"] .home-floating-note small {
+  color: #758399;
+}
+
+:root[data-theme="light"] .home-visual-orbit {
+  border-color: rgb(75 140 255 / 16%);
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard, .customer-dashboard, .admin-dashboard) {
+  color-scheme: light;
+  color: #344054;
+  background: #f4f7fb;
+}
+
+:root[data-theme="light"] :is(.vendor-sidebar, .customer-sidebar, .admin-sidebar) {
+  border-color: #e1e7ef;
+  background: #fff;
+}
+
+:root[data-theme="light"] :is(.vendor-brand, .customer-brand, .admin-brand) {
+  color: #202b3a;
+}
+
+:root[data-theme="light"] :is(.vendor-side-link, .customer-side-link, .admin-side-link, .vendor-signout, .customer-signout, .admin-signout) {
+  color: #5e6c80;
+}
+
+:root[data-theme="light"] :is(.vendor-side-link:hover, .customer-side-link:hover, .admin-side-link:hover, .vendor-signout:hover, .customer-signout:hover, .admin-signout:hover) {
+  color: #243247;
+  background: #f0f4f8;
+}
+
+:root[data-theme="light"] :is(.vendor-side-link--active, .customer-side-link--active, .admin-side-link--active, .admin-side-link--overview) {
+  color: #2867c5;
+  background: #eaf2ff;
+}
+
+:root[data-theme="light"] :is(.vendor-signout, .customer-signout, .admin-signout) {
+  border-color: #e1e7ef;
+}
+
+:root[data-theme="light"] :is(.vendor-topbar, .customer-topbar, .admin-topbar) {
+  border-color: #e1e7ef;
+  background: rgb(255 255 255 / 94%);
+}
+
+:root[data-theme="light"] :is(.vendor-breadcrumb, .customer-breadcrumb, .admin-breadcrumb) {
+  color: #66758a;
+}
+
+:root[data-theme="light"] :is(.vendor-profile strong, .customer-profile strong, .admin-profile strong) {
+  color: #293548;
+}
+
+:root[data-theme="light"] :is(.vendor-profile small, .customer-profile small, .admin-profile small) {
+  color: #758399;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard, .customer-dashboard, .admin-dashboard) :is(h1, h2, h3, h4, p, span, strong, small, label, dt, dd, th, td) {
+  color: #344054;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard, .customer-dashboard, .admin-dashboard) :is(.eyebrow, .vendor-intro .eyebrow, .customer-intro .eyebrow, .admin-intro .eyebrow, .customer-section-heading .eyebrow, .customer-discovery__heading .eyebrow, .admin-section-heading .eyebrow) {
+  color: #3b73bd;
+}
+
+:root[data-theme="light"] :is(.vendor-stat, .vendor-panel, .vendor-booking, .vendor-service-list, .vendor-settings-panel, .vendor-table-wrap,
+  .customer-stat, .customer-dashboard-panel, .customer-bookings, .customer-discovery:not(.customer-discovery--dashboard), .customer-upcoming-item,
+  .customer-dashboard .service-card, .admin-stat, .admin-chart-card, .admin-table-wrap) {
+  border-color: #e1e7ef;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(31 45 61 / 4%);
+}
+
+:root[data-theme="light"] :is(.vendor-table th, .admin-table th) {
+  border-color: #e1e7ef;
+  color: #58677b;
+  background: #f5f8fb;
+}
+
+:root[data-theme="light"] :is(.vendor-table td, .admin-table td, .vendor-table th, .admin-table th) {
+  border-color: #e8edf3;
+}
+
+:root[data-theme="light"] :is(.vendor-table__primary, .admin-table__primary, .vendor-booking h3, .vendor-booking__top strong,
+  .customer-upcoming-item h3, .customer-dashboard .service-card h3, .customer-dashboard .customer-bookings .service-card h2,
+  .admin-chart-heading h2, .admin-section-heading h2) {
+  color: #263548;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard .vendor-settings-panel input:not([type="checkbox"]), .vendor-dashboard .vendor-settings-panel textarea,
+  .vendor-dashboard input, .vendor-dashboard select, .vendor-dashboard textarea, .customer-dashboard input, .customer-dashboard select,
+  .customer-dashboard textarea, .admin-dashboard input, .admin-dashboard select, .admin-dashboard textarea,
+  .vendor-dashboard .vendor-action, .admin-dashboard .admin-action, .customer-text-action, .customer-dashboard .catalog-search,
+  .customer-dashboard .category-select) {
+  border-color: #d6dee8;
+  color: #293548;
+  background: #fff;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard input::placeholder, .vendor-dashboard textarea::placeholder, .customer-dashboard input::placeholder, .admin-dashboard input::placeholder) {
+  color: #8794a6;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard .secondary-button, .customer-dashboard .secondary-button, .admin-dashboard .secondary-button,
+  .customer-dashboard .service-book-link, .customer-dashboard .auth-link--primary, .vendor-dashboard .vendor-action, .admin-dashboard .admin-action) {
+  border-color: #d6dee8;
+  color: #42536a;
+  background: #fff;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard .secondary-button:hover, .customer-dashboard .secondary-button:hover, .admin-dashboard .secondary-button:hover,
+  .customer-dashboard .service-book-link:hover, .customer-dashboard .auth-link--primary:hover, .vendor-dashboard .vendor-action:hover:not(:disabled),
+  .admin-dashboard .admin-action:hover:not(:disabled)) {
+  border-color: #8db4e8;
+  color: #245da7;
+  background: #f2f7ff;
+}
+
+:root[data-theme="light"] :is(.vendor-status, .admin-status, .customer-booking-status) {
+  color: #58677b;
+  background: #edf1f6;
+}
+
+:root[data-theme="light"] :is(.vendor-dashboard .vendor-status--active, .admin-dashboard .admin-status--active, .customer-dashboard .customer-booking-status--confirmed, .customer-dashboard .customer-booking-status--completed) {
+  color: #16734c;
+  background: #e7f6ee;
+}
+
+:root[data-theme="light"] :is(.customer-dashboard .customer-booking-status--pending, .vendor-dashboard .vendor-status--pending) {
+  color: #94621c;
+  background: #fff4d9;
+}
+
+:root[data-theme="light"] :is(.customer-dashboard .customer-booking-status--cancelled, .customer-dashboard .customer-booking-status--rejected, .vendor-dashboard .vendor-action--danger) {
+  color: #a33b42;
+  background: #fff0f0;
+}
+
+:root[data-theme="light"] :is(.vendor-table tbody tr:hover, .admin-table tbody tr:hover) {
+  background: #f6f9fc;
+}
+
+:root[data-theme="light"] .admin-chart__grid {
+  stroke: #dce4ee;
+}
+
+:root[data-theme="light"] .admin-chart__point {
+  fill: #fff;
+}
+
+:root[data-theme="light"] .admin-chart-total {
+  border-color: #dce5ef;
+  color: #426284;
+  background: #f5f8fc;
+}
+
+:root[data-theme="light"] .customer-dashboard .customer-discovery--dashboard {
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 520px) {
+  .theme-toggle {
+    right: 12px;
+    bottom: 12px;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+}
+
+@media print {
+  .theme-toggle {
+    display: none !important;
+  }
+}
