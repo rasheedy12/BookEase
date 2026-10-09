@@ -41,7 +41,12 @@ export function CustomerBookingsPage() {
   const { user, error: authError, logout } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [customerSection, setCustomerSection] = useState<CustomerSection>('dashboard')
+  const [customerSection, setCustomerSection] = useState<CustomerSection>(() => {
+    const initialSection = searchParams.get('section')
+    return initialSection === 'services' || initialSection === 'bookings' || initialSection === 'history'
+      ? initialSection
+      : 'dashboard'
+  })
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<ServiceListing[]>([])
   const [serviceSearch, setServiceSearch] = useState('')
