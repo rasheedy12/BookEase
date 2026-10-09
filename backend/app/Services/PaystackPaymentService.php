@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -40,7 +41,8 @@ class PaystackPaymentService
                 'amount' => (string) $amount,
                 'currency' => 'NGN',
                 'reference' => $reference,
-                'callback_url' => rtrim((string) config('services.paystack.frontend_url'), '/').'/customer?payment=success',
+                'callback_url' => rtrim((string) config('services.paystack.frontend_url'), '/')
+                    .'/customer?payment=success&booking_id='.$booking->id,
                 'metadata' => [
                     'booking_id' => $booking->id,
                     'payment_id' => $payment->id,
@@ -100,30 +102,7 @@ class PaystackPaymentService
                 return;
             }
 
-            $verified = $this->request('get', '/transaction/verify/'.rawurlencode($reference));
-            $transaction = $verified['data'] ?? [];
-            if (($verified['status'] ?? false) !== true
-                || ($transaction['status'] ?? null) !== 'success'
-                || ($transaction['reference'] ?? null) !== $payment->provider_reference
-                || (int) ($transaction['amount'] ?? 0) !== $payment->amount
-                || ($transaction['currency'] ?? null) !== $payment->currency) {
-                Log::error('Paystack transaction verification did not match the expected payment.', [
-                    'payment_id' => $payment->id,
-                ]);
-
-                return;
-            }
-
-            if (! in_array($payment->status, ['refunded', 'refund_pending'], true)) {
-                $payment->update([
-                    'status' => 'succeeded',
-                    'transaction_id' => isset($transaction['id']) ? (string) $transaction['id'] : null,
-                ]);
-            }
-
-            if (in_array($payment->booking->status, [BookingStatus::CANCELLED, BookingStatus::REJECTED], true)) {
-                $this->refundBooking($payment->booking);
-            }
+            $this->verifyAndRecordPayment($payment);
 
             return;
         }
@@ -155,6 +134,90 @@ class PaystackPaymentService
                 ]);
             }
         }
+    }
+
+    public function verifyCustomerPayment(Booking $booking, string $reference): Payment
+    {
+        $payment = $booking->payments()
+            ->where('provider', 'paystack')
+            ->where('provider_reference', $reference)
+            ->firstOrFail();
+
+        if ($this->verifyAndRecordPayment($payment)) {
+            return $payment->fresh();
+        }
+
+        throw new HttpException(422, 'Paystack has not confirmed this payment yet. Please try again shortly.');
+    }
+
+    private function verifyAndRecordPayment(Payment $payment): bool
+    {
+        $verified = $this->request('get', '/transaction/verify/'.rawurlencode((string) $payment->provider_reference));
+        $transaction = $verified['data'] ?? [];
+        if (($verified['status'] ?? false) !== true
+            || ($transaction['status'] ?? null) !== 'success'
+            || ($transaction['reference'] ?? null) !== $payment->provider_reference
+            || (int) ($transaction['amount'] ?? 0) !== $payment->amount
+            || ($transaction['currency'] ?? null) !== $payment->currency) {
+            Log::warning('Paystack verification did not match the expected payment.', [
+                'payment_id' => $payment->id,
+            ]);
+
+            return false;
+        }
+
+        $shouldRefund = false;
+        DB::transaction(function () use ($payment, $transaction, &$shouldRefund): void {
+            $lockedPayment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            $booking = Booking::query()->lockForUpdate()->findOrFail($lockedPayment->booking_id);
+
+            if (! in_array($lockedPayment->status, ['refunded', 'refund_pending'], true)) {
+                $lockedPayment->transaction_id = isset($transaction['id'])
+                    ? (string) $transaction['id']
+                    : null;
+                $lockedPayment->status = 'succeeded';
+                if (! $lockedPayment->receipt_number) {
+                    $lockedPayment->receipt_number = 'BE-'.now()->format('Ymd').'-'.strtoupper(Str::random(10));
+                    $lockedPayment->receipt_issued_at = now();
+                    $lockedPayment->receipt_data = $this->receiptSnapshot($booking, $lockedPayment, $transaction);
+                }
+                $lockedPayment->save();
+            }
+
+            if ($booking->status === BookingStatus::PENDING) {
+                $booking->update(['status' => BookingStatus::CONFIRMED]);
+            } elseif (in_array($booking->status, [BookingStatus::CANCELLED, BookingStatus::REJECTED], true)) {
+                $shouldRefund = true;
+            }
+        });
+
+        if ($shouldRefund) {
+            $this->refundBooking($payment->booking);
+        }
+
+        return true;
+    }
+
+    private function receiptSnapshot(Booking $booking, Payment $payment, array $transaction): array
+    {
+        $booking->loadMissing(['customer:id,name,email', 'vendorProfile:id,business_name,phone,location']);
+
+        return [
+            'booking_id' => $booking->id,
+            'service_name' => $booking->service_name,
+            'booking_starts_at' => $booking->starts_at->toIso8601String(),
+            'booking_ends_at' => $booking->ends_at->toIso8601String(),
+            'customer_name' => $booking->customer?->name ?? 'Customer',
+            'customer_email' => $booking->customer?->email,
+            'vendor_name' => $booking->vendorProfile?->business_name ?? $booking->business_name,
+            'vendor_phone' => $booking->vendorProfile?->phone,
+            'vendor_location' => $booking->vendorProfile?->location,
+            'amount_minor' => $payment->amount,
+            'currency' => $payment->currency,
+            'transaction_id' => isset($transaction['id']) ? (string) $transaction['id'] : null,
+            'payment_reference' => $payment->provider_reference,
+            'payment_method' => $transaction['authorization']['channel'] ?? null,
+        ];
     }
 
     public function refundBooking(Booking $booking): void

@@ -170,6 +170,8 @@ class BookingController extends Controller
      */
     private function present(Booking $booking): array
     {
+        $paymentStatus = $booking->payments->sortByDesc('id')->first()?->status ?? 'unpaid';
+
         return [
             'id' => $booking->id,
             'service_id' => $booking->service_id,
@@ -179,7 +181,8 @@ class BookingController extends Controller
             'starts_at' => $booking->starts_at->toIso8601String(),
             'ends_at' => $booking->ends_at->toIso8601String(),
             'price' => $booking->price,
-            'payment_status' => $booking->payments->sortByDesc('id')->first()?->status ?? 'unpaid',
+            'payment_status' => $paymentStatus === 'succeeded' ? 'paid' : $paymentStatus,
+            'receipt_number' => $booking->payments->sortByDesc('id')->first()?->receipt_number,
             'status' => $booking->status->value,
             'notes' => $booking->notes,
         ];

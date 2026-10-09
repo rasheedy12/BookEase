@@ -1431,3 +1431,173 @@ h1 {
     flex-direction: column;
   }
 }
+
+.receipt-page {
+  width: min(100%, 820px);
+}
+
+.receipt-card {
+  width: 100%;
+}
+
+.receipt-header,
+.receipt-number,
+.receipt-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.receipt-header {
+  margin-bottom: 36px;
+}
+
+.receipt-success {
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e6eae4;
+}
+
+.receipt-success h1 {
+  margin-bottom: 8px;
+}
+
+.receipt-number {
+  margin-top: 20px;
+  color: #66736b;
+  font-size: 13px;
+}
+
+.receipt-number strong {
+  color: #26352d;
+}
+
+.receipt-total {
+  justify-content: flex-start;
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 14px;
+  background: #f3faf5;
+  color: #286342;
+}
+
+.receipt-total strong {
+  margin-left: auto;
+  font-size: 24px;
+}
+
+.receipt-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.receipt-details section {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e6eae4;
+  border-radius: 14px;
+}
+
+.receipt-details h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+.receipt-details dl {
+  margin: 0;
+}
+
+.receipt-details dl > div {
+  padding: 9px 0;
+  border-top: 1px solid #edf0eb;
+}
+
+.receipt-details dt {
+  color: #69766e;
+  font-size: 11px;
+}
+
+.receipt-details dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.receipt-actions {
+  margin-top: 22px;
+}
+
+.receipt-thanks {
+  margin-top: 30px;
+  color: #69766e;
+  text-align: center;
+  font-size: 13px;
+}
+
+@media print {
+  @page {
+    size: 80mm 200mm;
+    margin: 3mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 9pt;
+  }
+
+  .receipt-page {
+    display: block;
+    width: 74mm;
+    max-width: 74mm;
+    padding: 0;
+  }
+
+  .receipt-card {
+    width: 74mm;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .no-print,
+  .receipt-back {
+    display: none !important;
+  }
+
+  .receipt-details {
+    display: block;
+  }
+
+  .receipt-details section {
+    margin-bottom: 4mm;
+    padding: 3mm;
+    break-inside: avoid;
+  }
+
+  .receipt-details dd {
+    overflow-wrap: anywhere;
+  }
+
+  .receipt-total {
+    padding: 3mm;
+    background: #fff;
+    border: 1px dashed #777;
+  }
+
+  .receipt-success,
+  .receipt-number,
+  .receipt-total,
+  .receipt-details section,
+  .receipt-thanks {
+    color: #000 !important;
+  }
+
+  .receipt-thanks {
+    margin-top: 4mm;
+  }
+}

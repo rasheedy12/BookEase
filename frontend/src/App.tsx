@@ -7,6 +7,7 @@ import { ServicesPage } from './catalog/ServicesPage'
 import { VendorDashboardPage } from './catalog/VendorDashboardPage'
 import { CustomerBookingsPage } from './catalog/CustomerBookingsPage'
 import { AdminDashboardPage } from './auth/AdminDashboardPage'
+import { CustomerReceiptPage } from './catalog/CustomerReceiptPage'
 
 function WelcomePage() {
   const { user, loading } = useAuth()
@@ -53,6 +54,9 @@ function App() {
                 ? <CustomerBookingsPage />
                 : <AdminDashboardPage />
           } />
+          {role === 'customer' && (
+            <Route path="receipts/:bookingId" element={<CustomerReceiptPage />} />
+          )}
         </Route>
       ))}
       <Route path="*" element={<Navigate to="/" replace />} />

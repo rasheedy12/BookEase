@@ -16,7 +16,18 @@ class Payment extends Model
         'provider_reference',
         'transaction_id',
         'refund_id',
+        'receipt_number',
+        'receipt_data',
+        'receipt_issued_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'receipt_data' => 'array',
+            'receipt_issued_at' => 'datetime',
+        ];
+    }
 
     public function booking(): BelongsTo
     {

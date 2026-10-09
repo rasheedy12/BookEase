@@ -64,9 +64,25 @@ class PaymentTest extends TestCase
             'transaction_id' => '123456',
             'currency' => 'NGN',
         ]);
+        $booking->refresh();
+        $payment->refresh();
+        $this->assertSame(BookingStatus::CONFIRMED, $booking->status);
+        $this->assertNotNull($payment->receipt_number);
+        $this->assertSame($customer->name, $payment->receipt_data['customer_name']);
+        $this->assertSame('Portrait session', $payment->receipt_data['service_name']);
 
         $this->actingAs($customer, 'sanctum')
-            ->patchJson("/api/v1/customer/bookings/{$booking->id}/status", ['status' => 'cancelled'])
+            ->getJson("/api/v1/customer/bookings/{$booking->id}/receipt")
+            ->assertOk()
+            ->assertJsonPath('data.receipt_number', $payment->receipt_number)
+            ->assertJsonPath('data.customer_email', $customer->email)
+            ->assertJsonPath('data.vendor_name', 'Bright Studio')
+            ->assertJsonPath('data.transaction_id', '123456');
+        $this->get("/api/v1/customer/bookings/{$booking->id}/receipt.pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->patchJson("/api/v1/customer/bookings/{$booking->id}/status", ['status' => 'cancelled'])
             ->assertOk()
             ->assertJsonPath('data.status', 'cancelled')
             ->assertJsonPath('data.payment_status', 'refund_pending');
@@ -133,6 +149,37 @@ class PaymentTest extends TestCase
             ['CONTENT_TYPE' => 'application/json', 'HTTP_X_PAYSTACK_SIGNATURE' => 'invalid'],
             '{"event":"charge.success"}',
         )->assertBadRequest();
+    }
+
+    public function test_customer_can_verify_payment_after_paystack_redirect(): void
+    {
+        [$customer, $booking, $payment] = $this->makePendingPayment();
+
+        $this->actingAs($customer, 'sanctum')
+            ->postJson("/api/v1/customer/bookings/{$booking->id}/payment/verify", [
+                'reference' => $payment->provider_reference,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.payment_status', 'paid')
+            ->assertJsonPath('data.booking_status', 'confirmed');
+
+        $this->assertNotNull($payment->fresh()->receipt_number);
+    }
+
+    public function test_another_customer_cannot_view_a_receipt(): void
+    {
+        [, $booking, $payment] = $this->makePendingPayment();
+        $payment->update([
+            'status' => 'succeeded',
+            'receipt_number' => 'BE-20261008-TEST',
+            'receipt_issued_at' => now(),
+            'receipt_data' => ['service_name' => 'Portrait session'],
+        ]);
+        $otherCustomer = User::factory()->create(['role' => UserRole::CUSTOMER]);
+
+        $this->actingAs($otherCustomer, 'sanctum')
+            ->getJson("/api/v1/customer/bookings/{$booking->id}/receipt")
+            ->assertNotFound();
     }
 
     /**

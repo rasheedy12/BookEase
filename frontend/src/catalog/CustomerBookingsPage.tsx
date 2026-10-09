@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '../services/apiError'
-import { formatCurrency, getCustomerBookings, getPublicServices, updateBookingStatus } from '../services/catalog'
+import {
+  downloadCustomerReceiptPdf,
+  formatCurrency,
+  formatPaymentStatus,
+  getCustomerBookings,
+  getPublicServices,
+  updateBookingStatus,
+  verifyCustomerPayment,
+} from '../services/catalog'
 import type { Booking, ServiceListing } from '../services/catalog'
 
 function formatBookingTime(value: string): string {
@@ -25,6 +32,7 @@ export function CustomerBookingsPage() {
   const [servicesLoading, setServicesLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null)
   const [servicesError, setServicesError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
@@ -47,6 +55,36 @@ export function CustomerBookingsPage() {
       active = false
     }
   }, [])
+
+  const paymentReference = searchParams.get('reference') ?? searchParams.get('trxref')
+  useEffect(() => {
+    if (!paymentReference) return
+    const reference = paymentReference
+
+    let active = true
+    async function verifyPaymentOnReturn() {
+      try {
+        const bookingId = Number(searchParams.get('booking_id'))
+        if (!Number.isSafeInteger(bookingId) || bookingId < 1) {
+          throw new Error('The payment return did not include a valid booking reference.')
+        }
+
+        await verifyCustomerPayment(bookingId, reference)
+        if (!active) return
+        await reload()
+        setPaymentNotice('Payment Successful. Your booking is confirmed and your receipt is ready.')
+      } catch (requestError: unknown) {
+        if (active) setError(getApiErrorMessage(requestError))
+      } finally {
+        if (active) navigate('/customer', { replace: true })
+      }
+    }
+
+    void verifyPaymentOnReturn()
+    return () => {
+      active = false
+    }
+  }, [navigate, paymentReference, reload, searchParams])
 
   useEffect(() => {
     let active = true
@@ -211,9 +249,14 @@ export function CustomerBookingsPage() {
             <span className="customer-count">{bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'}</span>
           </div>
           {(error || authError) && <p className="form-error" role="alert">{error ?? authError}</p>}
-          {searchParams.get('payment') === 'success' && (
+          {paymentNotice && (
             <p className="success-message" role="status">
-              Payment submitted. Your booking and payment status will update when Paystack confirms it.
+              {paymentNotice}
+            </p>
+          )}
+          {searchParams.get('payment') === 'success' && !paymentReference && (
+            <p className="success-message" role="status">
+              Paystack returned successfully. Refresh your bookings to check payment verification.
             </p>
           )}
           {loading && <p role="status">Loading your bookings…</p>}
@@ -231,13 +274,42 @@ export function CustomerBookingsPage() {
                 <span className={`customer-booking-status customer-booking-status--${booking.status}`}>
                   {booking.status}
                 </span>
-                <p className="service-meta">Payment: {booking.payment_status}</p>
+                <p className="service-meta">Payment: {formatPaymentStatus(booking.payment_status)}</p>
                 <p>{booking.business_name}</p>
                 <p className="service-meta">{formatBookingTime(booking.starts_at)}</p>
                 {booking.notes && <p>{booking.notes}</p>}
-                {['pending', 'confirmed'].includes(booking.status) && (
-                  <button className="secondary-button" type="button" disabled={submitting}
-                    onClick={() => void cancelBooking(booking.id)}>Cancel booking</button>
+                {(booking.receipt_number || ['pending', 'confirmed'].includes(booking.status)) && (
+                  <div className="form-actions receipt-actions">
+                    {booking.receipt_number && <>
+                    <Link className="auth-link auth-link--primary" to={`/customer/receipts/${booking.id}`}>
+                      View receipt
+                    </Link>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={async () => {
+                        setError(null)
+                        try {
+                          const pdf = await downloadCustomerReceiptPdf(booking.id)
+                          const url = URL.createObjectURL(pdf)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.download = `bookease-receipt-${booking.receipt_number}.pdf`
+                          link.click()
+                          URL.revokeObjectURL(url)
+                        } catch (requestError: unknown) {
+                          setError(getApiErrorMessage(requestError))
+                        }
+                      }}
+                    >
+                      Download PDF
+                    </button>
+                    </>}
+                    {['pending', 'confirmed'].includes(booking.status) && (
+                      <button className="secondary-button" type="button" disabled={submitting}
+                        onClick={() => void cancelBooking(booking.id)}>Cancel booking</button>
+                    )}
+                  </div>
                 )}
               </article>
             ))}

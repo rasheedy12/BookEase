@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BookingController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaystackWebhookController;
+use App\Http\Controllers\Api\V1\ReceiptController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\VendorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +49,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('/customer/bookings', [BookingController::class, 'customerIndex']);
                 Route::post('/customer/bookings', [BookingController::class, 'store']);
                 Route::patch('/customer/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+                Route::post('/customer/bookings/{booking}/payment/verify', [PaymentController::class, 'verifyCustomerPayment']);
+                Route::get('/customer/bookings/{booking}/receipt', [ReceiptController::class, 'show']);
+                Route::get('/customer/bookings/{booking}/receipt.pdf', [ReceiptController::class, 'download']);
             });
 
             Route::middleware('role:admin')->prefix('admin')->group(function () {

@@ -8,6 +8,13 @@ export function formatCurrency(amount: string | number): string {
   }).format(Number(amount))
 }
 
+export function formatPaymentStatus(status: PaymentStatus): string {
+  return (status === 'succeeded' ? 'paid' : status)
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 export interface VendorProfile {
   id: number
   business_name: string
@@ -71,6 +78,7 @@ export type PaymentStatus =
   | 'unpaid'
   | 'pending'
   | 'succeeded'
+  | 'paid'
   | 'failed'
   | 'refund_pending'
   | 'refund_failed'
@@ -86,8 +94,29 @@ export interface Booking {
   ends_at: string
   price: string
   payment_status: PaymentStatus
+  receipt_number: string | null
   status: BookingStatus
   notes: string | null
+}
+
+export interface PaymentReceipt {
+  receipt_number: string
+  issued_at: string
+  payment_status: PaymentStatus
+  booking_id: number
+  service_name: string
+  booking_starts_at: string
+  booking_ends_at: string
+  customer_name: string
+  customer_email: string | null
+  vendor_name: string
+  vendor_phone: string | null
+  vendor_location: string | null
+  amount_minor: number
+  currency: 'NGN'
+  transaction_id: string | null
+  payment_reference: string
+  payment_method: string | null
 }
 
 export type VendorProfileInput = Omit<VendorProfile, 'id' | 'timezone'>
@@ -143,6 +172,25 @@ export async function deleteService(serviceId: number): Promise<void> {
 export async function getCustomerBookings(): Promise<Booking[]> {
   const { data } = await api.get<{ data: Booking[] }>('/api/v1/customer/bookings')
   return data.data
+}
+
+export async function verifyCustomerPayment(bookingId: number, reference: string): Promise<void> {
+  await api.post(`/api/v1/customer/bookings/${bookingId}/payment/verify`, { reference })
+}
+
+export async function getCustomerReceipt(bookingId: number): Promise<PaymentReceipt> {
+  const { data } = await api.get<{ data: PaymentReceipt }>(
+    `/api/v1/customer/bookings/${bookingId}/receipt`,
+  )
+  return data.data
+}
+
+export async function downloadCustomerReceiptPdf(bookingId: number): Promise<Blob> {
+  const { data } = await api.get<Blob>(
+    `/api/v1/customer/bookings/${bookingId}/receipt.pdf`,
+    { responseType: 'blob' },
+  )
+  return data
 }
 
 export async function getVendorBookings(): Promise<Booking[]> {
