@@ -87,30 +87,6 @@ export function VendorDashboardPage() {
   const pendingBookings = bookings.filter((booking) => booking.status === 'pending').length
   const confirmedBookings = bookings.filter((booking) => booking.status === 'confirmed').length
 
-  async function reloadVendorData() {
-    const [savedProfile, savedServices, savedBookings, savedAvailability] = await Promise.all([
-      getVendorProfile(),
-      getVendorServices(),
-      getVendorBookings(),
-      getVendorAvailability(),
-    ])
-    if (savedProfile) {
-      setProfileSaved(true)
-      setProfile({
-        business_name: savedProfile.business_name,
-        description: savedProfile.description ?? '',
-        phone: savedProfile.phone ?? '',
-        location: savedProfile.location ?? '',
-      })
-    }
-    setServices(savedServices)
-    setBookings(savedBookings)
-    setAvailability(savedAvailability.is_configured ? savedAvailability : {
-      ...savedAvailability,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || savedAvailability.timezone,
-    })
-  }
-
   useEffect(() => {
     let active = true
     Promise.all([getVendorProfile(), getVendorServices(), getVendorBookings(), getVendorAvailability()])
@@ -171,8 +147,10 @@ export function VendorDashboardPage() {
     setError(null)
     setNotice(null)
     try {
-      await saveService(serviceForm, editingServiceId ?? undefined)
-      await reloadVendorData()
+      const savedService = await saveService(serviceForm, editingServiceId ?? undefined)
+      setServices((current) => editingServiceId === null
+        ? [savedService, ...current]
+        : current.map((service) => service.id === savedService.id ? savedService : service))
       setServiceForm(emptyService)
       setEditingServiceId(null)
       setNotice('Service saved.')
@@ -206,11 +184,11 @@ export function VendorDashboardPage() {
     try {
       await deleteService(serviceId)
       setServices((current) => current.filter((service) => service.id !== serviceId))
-      setNotice('Service deleted.')
       if (editingServiceId === serviceId) {
         setEditingServiceId(null)
         setServiceForm(emptyService)
       }
+      setNotice('Service deleted.')
     } catch (requestError: unknown) {
       setError(getApiErrorMessage(requestError))
     } finally {
