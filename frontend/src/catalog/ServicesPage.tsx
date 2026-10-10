@@ -4,13 +4,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { getApiErrorMessage } from '../services/apiError'
 import { createBooking, formatCurrency, getPublicServices, weekDays } from '../services/catalog'
+import { getVendorLocalDateTimeMinimum, validateVendorOpeningHours, vendorLocalDateTimeToIso } from '../services/vendorSchedule'
 import type { ServiceListing, VendorOpeningDay } from '../services/catalog'
-
-function localDateTimeMinimum(): string {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
-}
 
 function formatOpeningHours(days: VendorOpeningDay[] | undefined): string {
   if (!days?.some((day) => !day.is_closed)) return 'Not accepting bookings'
@@ -80,18 +75,44 @@ export function ServicesPage() {
     [service.name, service.description, service.category, service.vendor_profile?.business_name]
       .some((field) => field?.toLocaleLowerCase().includes(query)),
   )
+  const bookingTimezone = bookingService?.vendor_profile?.timezone
+    ?? Intl.DateTimeFormat().resolvedOptions().timeZone
 
   async function handleBookingSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!bookingService || !startsAt) return
-    setBooking(true)
     setError(null)
     setBookingTimeError(null)
+
+    const openingHoursError = validateVendorOpeningHours(
+      startsAt,
+      bookingService.duration_minutes,
+      bookingService.vendor_profile?.opening_hours,
+      bookingTimezone,
+    )
+    if (openingHoursError) {
+      setBookingTimeError(openingHoursError)
+      bookingStartInput.current?.focus()
+      return
+    }
+
+    let bookingStartsAt: string
+    try {
+      bookingStartsAt = vendorLocalDateTimeToIso(startsAt, bookingTimezone)
+    } catch (timeError: unknown) {
+      setBookingTimeError(
+        timeError instanceof Error ? timeError.message : 'Choose a valid booking date and time.',
+      )
+      bookingStartInput.current?.focus()
+      return
+    }
+
+    setBooking(true)
     setNotice(null)
     try {
       const result = await createBooking({
         service_id: bookingService.id,
-        starts_at: new Date(startsAt).toISOString(),
+        starts_at: bookingStartsAt,
         notes,
       })
       window.location.assign(result.checkout_url)
@@ -169,13 +190,14 @@ export function ServicesPage() {
                 <h2>Request {bookingService.name}</h2>
                 <p className="form-hint">Payment of {formatCurrency(bookingService.price)} is collected now. Paid bookings are automatically refunded if cancelled or declined.</p>
                 <label htmlFor="booking-start">Start time</label>
-                <input ref={bookingStartInput} id="booking-start" type="datetime-local" required min={localDateTimeMinimum()} value={startsAt}
+                <input ref={bookingStartInput} id="booking-start" type="datetime-local" required min={getVendorLocalDateTimeMinimum(bookingTimezone)} value={startsAt}
                   aria-invalid={bookingTimeError ? 'true' : undefined}
                   aria-describedby={bookingTimeError ? 'booking-start-error' : undefined}
                   onChange={(event) => {
                     setStartsAt(event.target.value)
                     if (bookingTimeError) setBookingTimeError(null)
                   }} />
+                <p className="form-hint">Times are shown in the vendor’s timezone: {bookingTimezone}. The appointment must end before closing.</p>
                 {bookingTimeError && <p className="services-booking-time-error" id="booking-start-error" role="alert">{bookingTimeError}</p>}
                 <label htmlFor="booking-notes">Notes for the provider (optional)</label>
                 <textarea id="booking-notes" rows={3} maxLength={2000} value={notes} onChange={(event) => setNotes(event.target.value)} />
